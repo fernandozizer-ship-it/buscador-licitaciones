@@ -1,0 +1,41 @@
+{
+  "_ayuda": "Edita este archivo para cambiar qué te llega al correo. El buscador web siempre guarda TODO (obras, supervisión y consultoría de obra de todo el país); estos filtros solo deciden qué se envía por correo.",
+
+  "regiones_prioritarias": ["Ica", "Lima", "Callao", "Arequipa", "Moquegua"],
+
+  "tipos_para_correo": ["Obra", "Supervisión", "Consultoría de obra"],
+
+  "montos_para_correo": {
+    "Obra":                {"minimo": 300000, "maximo": 10000000},
+    "Supervisión":         {"minimo": 30000,  "maximo": 3000000},
+    "Consultoría de obra": {"minimo": 30000,  "maximo": 3000000}
+  },
+
+  "incluir_sin_monto": true,
+
+  "solo_estas_especialidades": [],
+
+  "palabras_excluidas": ["adquisicion de", "suministro de", "alquiler de", "mantenimiento de vehiculos", "seguro", "vigilancia", "limpieza de ambientes"],
+
+  "max_lineas_resto_del_pais": 40,
+
+  "dias_primera_carga": 3,
+
+  "dias_historial": 365,
+
+  "max_paginas_por_ejecucion": 1500,
+
+  "pausa_entre_paginas_seg": 0.4,
+
+  "especialidades": {
+    "Pistas y veredas / vías urbanas": ["pistas", "veredas", "pavimentacion", "pavimento", "vias urbanas", "transitabilidad vehicular", "transitabilidad peatonal", "calles", "jiron", "avenida", "adoquin"],
+    "Carreteras, caminos y puentes": ["carretera", "camino vecinal", "trocha", "puente", "pontón", "ponton", "via departamental", "red vial", "infraestructura vial"],
+    "Agua y saneamiento": ["agua potable", "alcantarillado", "saneamiento", "desague", "ptar", "aguas residuales", "reservorio", "unidades basicas de saneamiento", "ubs"],
+    "Riego y defensa ribereña": ["riego", "canal", "defensa riberena", "drenaje", "represa", "bocatoma", "enrocado", "quebrada", "cauce"],
+    "Edificaciones - educación": ["institucion educativa", "i.e.", "colegio", "aulas", "servicio educativo", "educacion inicial", "educacion primaria", "educacion secundaria", "universidad", "instituto"],
+    "Edificaciones - salud": ["hospital", "centro de salud", "puesto de salud", "establecimiento de salud", "servicios de salud"],
+    "Otras edificaciones y espacios públicos": ["mercado", "local municipal", "comisaria", "estadio", "losa deportiva", "complejo deportivo", "coliseo", "parque", "plaza", "malecon", "edificio", "sede"],
+    "Electrificación": ["electrificacion", "electrico", "alumbrado", "redes primarias", "redes secundarias", "subestacion"],
+    "Movimiento de tierras y obras civiles": ["movimiento de tierras", "explanacion", "obras civiles", "muro de contencion", "relleno", "corte y relleno", "estabilizacion de taludes"]
+  }
+}

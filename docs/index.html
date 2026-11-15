@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Buscador de licitaciones de obra</title>
+<style>
+  :root { --fondo:#f4f5f7; --tarjeta:#fff; --texto:#1f2933; --suave:#616e7c; --borde:#dde1e6; --acento:#c2410c; --azul:#1d4ed8; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif; background:var(--fondo); color:var(--texto); }
+  header { background:#1f2933; color:#fff; padding:16px 20px; }
+  header h1 { margin:0; font-size:20px; }
+  header p { margin:4px 0 0; color:#cbd2d9; font-size:13px; }
+  main { max-width:1100px; margin:0 auto; padding:16px; }
+  .filtros { background:var(--tarjeta); border:1px solid var(--borde); border-radius:10px; padding:14px; display:grid; gap:10px;
+             grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); }
+  .filtros .ancho { grid-column:1/-1; }
+  label { font-size:12px; color:var(--suave); display:block; margin-bottom:3px; }
+  input, select { width:100%; padding:8px 9px; border:1px solid var(--borde); border-radius:7px; font-size:14px; background:#fff; color:var(--texto); }
+  input[type=checkbox] { width:auto; margin-right:6px; }
+  .check { display:flex; align-items:center; font-size:14px; padding-top:18px; }
+  .barra { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin:14px 2px; font-size:14px; color:var(--suave); }
+  button { border:1px solid var(--borde); background:#fff; padding:8px 12px; border-radius:7px; font-size:14px; cursor:pointer; color:var(--texto); }
+  button.primario { background:var(--acento); border-color:var(--acento); color:#fff; }
+  .tarjeta { background:var(--tarjeta); border:1px solid var(--borde); border-radius:10px; padding:14px; margin-bottom:10px; }
+  .etiquetas { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:6px; }
+  .tag { font-size:11px; padding:2px 8px; border-radius:20px; background:#eef0f3; color:#3e4c59; }
+  .tag.Obra { background:#fde7d9; color:#9a3412; }
+  .tag.Supervisión { background:#dbeafe; color:#1e40af; }
+  .tag.Consultoría { background:#e9e3fb; color:#5b21b6; }
+  .tag.vencida { background:#fee2e2; color:#991b1b; }
+  .titulo { font-weight:600; font-size:15px; line-height:1.35; }
+  .titulo a { color:var(--azul); text-decoration:none; }
+  .titulo a:hover { text-decoration:underline; }
+  .meta { display:flex; gap:16px; flex-wrap:wrap; margin-top:8px; font-size:13px; color:#3e4c59; }
+  .meta b { color:var(--texto); }
+  .codigo { font-size:12px; color:var(--suave); margin-top:4px; }
+  .vacio { text-align:center; padding:40px; color:var(--suave); }
+  #mas { display:block; margin:10px auto 30px; }
+  #mas[hidden] { display:none; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🏗️ Buscador de licitaciones de obra y supervisión</h1>
+  <p id="actualizado">Cargando datos…</p>
+</header>
+<main>
+  <section class="filtros">
+    <div class="ancho"><label for="q">Buscar (proyecto, entidad, distrito, código, CUI…)</label>
+      <input id="q" type="search" placeholder="Ej.: pisco pistas, saneamiento chincha, colegio"></div>
+    <div><label for="tipo">Tipo</label><select id="tipo"><option value="">Todos</option></select></div>
+    <div><label for="esp">Especialidad</label><select id="esp"><option value="">Todas</option></select></div>
+    <div><label for="dep">Región</label><select id="dep"><option value="">Todo el país</option></select></div>
+    <div><label for="proc">Procedimiento</label><select id="proc"><option value="">Todos</option></select></div>
+    <div><label for="min">Monto mínimo (S/)</label><input id="min" type="number" min="0" step="10000" placeholder="0"></div>
+    <div><label for="max">Monto máximo (S/)</label><input id="max" type="number" min="0" step="10000" placeholder="sin límite"></div>
+    <div><label for="dias">Publicado</label>
+      <select id="dias"><option value="">Cualquier fecha</option><option value="1">Últimas 24 h</option><option value="7">Últimos 7 días</option>
+        <option value="30">Últimos 30 días</option><option value="90">Últimos 90 días</option></select></div>
+    <div><label for="orden">Ordenar por</label>
+      <select id="orden"><option value="publicado">Más recientes</option><option value="monto">Mayor monto</option><option value="cierre">Cierre más próximo</option></select></div>
+    <div class="check"><label style="margin:0;font-size:14px;color:var(--texto)"><input id="vigentes" type="checkbox" checked>Solo vigentes</label></div>
+  </section>
+
+  <div class="barra">
+    <span id="contador"></span>
+    <span><button id="limpiar">Limpiar filtros</button> <button id="csv" class="primario">Descargar Excel (CSV)</button></span>
+  </div>
+  <div id="lista"></div>
+  <button id="mas" hidden>Ver más</button>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const norm = (s) => (s || "").toString().normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+const esc = (s) => (s ?? "").toString().replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const CAMPOS = ["q","tipo","esp","dep","proc","min","max","dias","orden","vigentes"];
+let TODOS = [], FILTRADOS = [], MOSTRADOS = 0;
+const PASO = 50;
+
+function soles(r) {
+  if (r.monto == null) return "Monto no indicado";
+  const s = (!r.moneda || r.moneda === "PEN") ? "S/" : r.moneda;
+  return s + " " + Math.round(r.monto).toLocaleString("es-PE");
+}
+function fecha(v) {
+  if (!v) return "—";
+  const d = new Date(v);
+  return isNaN(d) ? v : d.toLocaleString("es-PE", {day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit"});
+}
+function vencida(r) {
+  if (["complete","cancelled","unsuccessful","withdrawn"].includes(r.estado)) return true;
+  return r.cierre ? new Date(r.cierre) < new Date() : false;
+}
+function llenar(select, valores) {
+  [...new Set(valores.filter(Boolean))].sort((a,b)=>a.localeCompare(b,"es")).forEach(v => {
+    const o = document.createElement("option"); o.value = v; o.textContent = v; select.appendChild(o);
+  });
+}
+
+function guardarFiltros() {
+  try {
+    const f = {}; CAMPOS.forEach(c => f[c] = $(c).type === "checkbox" ? $(c).checked : $(c).value);
+    localStorage.setItem("filtros-licitaciones", JSON.stringify(f));
+  } catch (e) {}
+}
+function cargarFiltros() {
+  try {
+    const f = JSON.parse(localStorage.getItem("filtros-licitaciones") || "{}");
+    CAMPOS.forEach(c => { if (c in f) { if ($(c).type === "checkbox") $(c).checked = f[c]; else $(c).value = f[c]; } });
+  } catch (e) {}
+}
+
+function filtrar() {
+  const palabras = norm($("q").value).split(/\s+/).filter(Boolean);
+  const tipo = $("tipo").value, esp = $("esp").value, dep = $("dep").value, proc = $("proc").value;
+  const min = parseFloat($("min").value), max = parseFloat($("max").value);
+  const dias = parseInt($("dias").value, 10), soloVig = $("vigentes").checked;
+  const desde = dias ? Date.now() - dias * 86400000 : null;
+  FILTRADOS = TODOS.filter(r => {
+    if (tipo && r.tipo !== tipo) return false;
+    if (esp && !(r.especialidades || []).includes(esp)) return false;
+    if (dep && r.departamento !== dep) return false;
+    if (proc && r.procedimiento !== proc) return false;
+    if (!isNaN(min) && (r.monto == null || r.monto < min)) return false;
+    if (!isNaN(max) && (r.monto == null || r.monto > max)) return false;
+    if (desde && (!r.publicado || new Date(r.publicado).getTime() < desde)) return false;
+    if (soloVig && vencida(r)) return false;
+    if (palabras.length && !palabras.every(p => r._txt.includes(p))) return false;
+    return true;
+  });
+  const orden = $("orden").value;
+  FILTRADOS.sort((a, b) => {
+    if (orden === "monto") return (b.monto || 0) - (a.monto || 0);
+    if (orden === "cierre") return (a.cierre || "9999").localeCompare(b.cierre || "9999");
+    return (b.publicado || "").localeCompare(a.publicado || "");
+  });
+  MOSTRADOS = 0; $("lista").innerHTML = ""; mostrarMas();
+  $("contador").textContent = FILTRADOS.length.toLocaleString("es-PE") + " resultados de " + TODOS.length.toLocaleString("es-PE");
+  guardarFiltros();
+}
+
+function tarjeta(r) {
+  const lugar = [r.distrito, r.provincia, r.departamento].filter(Boolean).join(" · ") || "Ubicación no detectada";
+  const tipoClase = (r.tipo || "").split(" ")[0];
+  const esp = (r.especialidades || []).map(e => `<span class="tag">${esc(e)}</span>`).join("");
+  return `<article class="tarjeta">
+    <div class="etiquetas"><span class="tag ${esc(tipoClase)}">${esc(r.tipo)}</span>${esp}
+      ${r.procedimiento ? `<span class="tag">${esc(r.procedimiento)}</span>` : ""}
+      ${vencida(r) ? `<span class="tag vencida">Cerrada / vencida</span>` : ""}</div>
+    <div class="titulo"><a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.descripcion || r.titulo)}</a></div>
+    <div class="meta"><span>🏛️ ${esc(r.entidad)}</span><span>📍 ${esc(lugar)}</span></div>
+    <div class="meta"><span>💰 <b>${esc(soles(r))}</b></span><span>📅 Publicado: ${esc(fecha(r.publicado))}</span><span>⏰ Cierre: <b>${esc(fecha(r.cierre))}</b></span></div>
+    <div class="codigo">${esc(r.titulo)} · Fuente: ${esc(r.fuente)}</div>
+  </article>`;
+}
+function mostrarMas() {
+  const lote = FILTRADOS.slice(MOSTRADOS, MOSTRADOS + PASO);
+  if (!FILTRADOS.length) $("lista").innerHTML = `<div class="vacio">No hay resultados con estos filtros.</div>`;
+  else $("lista").insertAdjacentHTML("beforeend", lote.map(tarjeta).join(""));
+  MOSTRADOS += lote.length;
+  $("mas").hidden = MOSTRADOS >= FILTRADOS.length;
+}
+
+function descargarCSV() {
+  const cols = ["tipo","especialidades","descripcion","titulo","entidad","departamento","provincia","distrito","monto","moneda","procedimiento","publicado","cierre","url"];
+  const celda = (v) => '"' + (Array.isArray(v) ? v.join("; ") : (v ?? "")).toString().replace(/"/g, '""') + '"';
+  const filas = [cols.join(";")].concat(FILTRADOS.map(r => cols.map(c => celda(r[c])).join(";")));
+  const blob = new Blob(["﻿" + filas.join("\n")], {type: "text/csv;charset=utf-8"});
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+  a.download = "licitaciones_" + new Date().toISOString().slice(0,10) + ".csv"; a.click();
+}
+
+let temporizador;
+CAMPOS.forEach(c => $(c).addEventListener(c === "q" ? "input" : "change", () => { clearTimeout(temporizador); temporizador = setTimeout(filtrar, 200); }));
+$("mas").addEventListener("click", mostrarMas);
+$("csv").addEventListener("click", descargarCSV);
+$("limpiar").addEventListener("click", () => {
+  CAMPOS.forEach(c => { if ($(c).type === "checkbox") $(c).checked = true; else $(c).value = c === "orden" ? "publicado" : ""; });
+  filtrar();
+});
+
+fetch("datos.json?v=" + Date.now()).then(r => r.json()).then(data => {
+  TODOS = (data.registros || []).map(r => ({...r, _txt: norm([r.titulo, r.descripcion, r.entidad, r.departamento, r.provincia, r.distrito, r.procedimiento, (r.especialidades||[]).join(" "), r.id].join(" "))}));
+  llenar($("tipo"), TODOS.map(r => r.tipo));
+  llenar($("esp"), TODOS.flatMap(r => r.especialidades || []));
+  llenar($("dep"), TODOS.map(r => r.departamento));
+  llenar($("proc"), TODOS.map(r => r.procedimiento));
+  $("actualizado").textContent = data.actualizado
+    ? "Actualizado: " + fecha(data.actualizado) + " · " + (data.total || TODOS.length).toLocaleString("es-PE") + " procesos de obra, supervisión y consultoría (SEACE)"
+    : "Aún no hay datos: la primera actualización llega tras la primera ejecución.";
+  cargarFiltros(); filtrar();
+}).catch(() => { $("actualizado").textContent = "No se pudieron cargar los datos."; $("lista").innerHTML = `<div class="vacio">Sin datos todavía.</div>`; });
+</script>
+</body>
+</html>
