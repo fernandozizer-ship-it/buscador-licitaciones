@@ -242,7 +242,7 @@ function filtrarAvisos() {
     ${a.obra ? `<div class="sub">${esc(a.titulo)}</div>` : ""}
     ${datos.length ? `<div class="meta">${datos.map(d => `<span>${esc(d)}</span>`).join("")}</div>` : ""}
     ${!a.obra && a.resumen ? `<div class="resumen">${esc(a.resumen)}</div>` : ""}
-    <div class="meta"><span>📅 ${esc(fechaAviso(a))}</span><span>🏷️ ${esc(a.sector || "Público")}</span><span>🔎 Procedencia: ${esc(a.procedencia || a.medio || a.fuente)}</span></div>
+    <div class="meta"><span>📅 ${esc(fechaAviso(a))}</span><span>🏷️ ${esc(a.sector || "Público")}</span><span>🔎 Procedencia: ${esc(a.procedencia || a.medio || a.fuente)}</span>${a.cui ? `<span><a href="https://ofi5.mef.gob.pe/ssi/" target="_blank" rel="noopener" title="Pega el CUI ${esc(a.cui)} en el buscador del MEF">📄 Consultar CUI ${esc(a.cui)} en el MEF</a></span>` : ""}</div>
   </article>`;}).join("") : `<div class="vacio">No hay avisos con estos filtros.</div>`;
 }
 ["aq","aclase","agrupo","asector","adep","adias"].forEach(c => $(c).addEventListener(c === "aq" ? "input" : "change", filtrarAvisos));
