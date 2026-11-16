@@ -1,7 +1,7 @@
 {
   "fallas_seguidas": 0,
   "ultimo_error": "2026-11-15T19:47-05:00 La API del OECE no respondió (HTTPSConnectionPool(host='contratacionesabiertas.osce.gob.pe', port=443): Max retries exceeded with url: /api/v1/releasesAfter?format=json&order=desc (Caused by NameResolutionError(\"HTTPSConnection(host='contratacionesabiertas.osce.gob.pe', port=443)) en https://contratacionesabiertas.oece.gob.pe/api/v1/releasesAfter?format=json&order=desc",
-  "ultima_ejecucion_ok": "2026-11-16T04:21-05:00",
+  "ultima_ejecucion_ok": "2026-11-16T04:46-05:00",
   "ultimo_resumen": "0 nuevos, 0 prioritarias",
   "fuentes_avisos_vistas": [
     "ANIN - gob.pe",
@@ -132,7 +132,6 @@
     "aviso-28480a94be652ad3",
     "aviso-28850add15db0e2d",
     "aviso-2a2b685b7221d2d0",
-    "aviso-2bec750e43b8dd69",
     "aviso-2ca032dc9e72929a",
     "aviso-2e1c63dfcc6416ea",
     "aviso-2e8225de4935a6eb",
@@ -190,7 +189,6 @@
     "aviso-49c060465ad89f87",
     "aviso-4a84c621b53373e2",
     "aviso-4aa7bd9b78009b0b",
-    "aviso-4aad0656e6d0bb74",
     "aviso-4b8dbda9eb65ff4d",
     "aviso-4cd937e0a2810857",
     "aviso-4ce16936e4468c2b",
@@ -229,7 +227,6 @@
     "aviso-602e3d6a68612dd9",
     "aviso-60489dc2cb268886",
     "aviso-60b875ff87187fd7",
-    "aviso-6112eb14461ab691",
     "aviso-611ca3363c633eb5",
     "aviso-6142c6c53511c982",
     "aviso-632356f2507d5704",
@@ -408,7 +405,6 @@
     "aviso-b88594b50868ff5f",
     "aviso-b918938250595252",
     "aviso-b9b46e7e5e619ddb",
-    "aviso-ba5d81da29d8f5af",
     "aviso-ba908117108b38ce",
     "aviso-bac12dc64422af40",
     "aviso-bb21bc46177ebad7",
@@ -475,7 +471,6 @@
     "aviso-dfac5cd7a44d82ee",
     "aviso-dfbe19e155f85f88",
     "aviso-e041977b679bb10f",
-    "aviso-e10f3050baef71a8",
     "aviso-e1841c4b1dba6c53",
     "aviso-e297c82928c39a80",
     "aviso-e3bce685379db875",
@@ -514,7 +509,6 @@
     "aviso-f512bccc40a8fbcb",
     "aviso-f5c74f124ce50161",
     "aviso-f61f37de20432c0c",
-    "aviso-f65c33849115c48e",
     "aviso-f66d370e474d8bfb",
     "aviso-f6dd955d759b69f0",
     "aviso-f7faca2969ce1f0c",
@@ -537,5 +531,6 @@
     "aviso-fedfd40cadcaa36c",
     "aviso-ff45e33dbebb1a29",
     "aviso-ffe8b3e0ea2468f9"
-  ]
+  ],
+  "version_filtros": 3
 }
