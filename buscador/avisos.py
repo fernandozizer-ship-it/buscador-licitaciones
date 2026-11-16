@@ -424,7 +424,8 @@ def _monto(texto):
 RE_SUBCONTRATO = re.compile(r"subcontrat|sub contrat|paquetes? de partidas|invitacion a cotizar|invitamos a cotizar|"
                             r"solicitamos cotizacion|buscamos (empresas|contratistas|proveedores)|requerimos (empresas|contratistas)|"
                             r"registro de (proveedores|contratistas|subcontratistas)|convocatoria (a|de) (proveedores|contratistas)|"
-                            r"proveedores locales|empresas comunales|desarrollo de proveedores")
+                            r"proveedores locales|empresas comunales|desarrollo de proveedores|nuevos proveedores|"
+                            r"(busca|buscan|convoca|convocan|invita|invitan|requiere|requieren)[a-z ]{0,30}(proveedores|contratistas|empresas (de|contratistas|locales))")
 
 
 def clasificar(titulo_n, texto_n, es_nota):
@@ -434,7 +435,7 @@ def clasificar(titulo_n, texto_n, es_nota):
         return "Acercamiento al mercado"
     if re.search(r"acercamiento al mercado|consulta al mercado|interaccion con el mercado|difusion del requerimiento|contratacion futura", titulo_n + " " + texto_n[:1500]):
         return "Acercamiento al mercado"
-    if re.search(r"buena pro|adjudicacion|adjudico|acta de evaluacion|resultado|ganador", titulo_n):
+    if re.search(r"buena pro|adjudicacion|adjudico|adjudica|acta de evaluacion|resultado|ganador", titulo_n):
         return "Resultado / buena pro"
     if re.search(r"circular|absolucion|acta de recepcion|bases integradas|cronograma|fe de erratas|modificacion|prorroga|comunicado n", titulo_n):
         return "Documento de un proceso en curso"
@@ -555,6 +556,7 @@ def revisar(config, almacen, estado, sesion, normalizar, departamento_de, ahora)
     claves_rx = compilar(config.get("palabras_clave_avisos", []), normalizar)
     excluir_rx = compilar(config.get("palabras_excluidas_avisos", []), normalizar)
     contexto_rx = compilar(config.get("palabras_contexto_obra", []), normalizar)
+    excluir_detalle_rx = compilar(config.get("palabras_excluidas_en_detalle", []), normalizar)
 
     def tiene_contexto(texto_n):
         return coincide(texto_n, contexto_rx) if contexto_rx else True
@@ -587,6 +589,9 @@ def revisar(config, almacen, estado, sesion, normalizar, departamento_de, ahora)
         return not primera_vez and fecha >= ahora - dt.timedelta(days=dias_max)
     fuentes_vistas = set(estado.get("fuentes_avisos_vistas", []))
     rechazados = set(estado.get("avisos_rechazados", []))
+    if estado.get("version_filtros") != config.get("version_filtros"):
+        rechazados = set()  # las reglas cambiaron: se vuelve a evaluar lo descartado
+        estado["version_filtros"] = config.get("version_filtros")
     # Fuentes cuyo lector cambió: su próxima lectura vuelve a ser "primera" (sin avalancha de correo)
     ya = set(estado.get("fuentes_reiniciadas", []))
     for nombre_r in config.get("reiniciar_primera_lectura", []):
@@ -660,7 +665,7 @@ def revisar(config, almacen, estado, sesion, normalizar, departamento_de, ahora)
                 detalle_n = normalizar(detalle[:8000])
                 relevante = relevante or coincide(detalle_n, claves_fuente)
                 con_contexto = con_contexto or tiene_contexto(detalle_n)
-                if coincide(normalizar(detalle[:2500]), excluir_rx):
+                if coincide(normalizar(detalle[:2500]), excluir_detalle_rx):
                     relevante = False
                 time.sleep(0.5)
             if not (relevante and con_contexto):
@@ -712,7 +717,7 @@ def revisar(config, almacen, estado, sesion, normalizar, departamento_de, ahora)
         if a.get("fecha_real") is None:
             a["fecha_real"] = a.get("fecha") != a.get("visto")
         try:
-            enriquecer(sesion, a, normalizar, departamento_de, especialidades_rx, contexto_rx, excluir_rx)
+            enriquecer(sesion, a, normalizar, departamento_de, especialidades_rx, contexto_rx, excluir_detalle_rx)
         except Exception as e:  # noqa: BLE001
             print(f"    no se pudo completar {a['url'][:70]}: {str(e)[:120]}")
         time.sleep(0.4)

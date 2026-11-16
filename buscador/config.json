@@ -887,7 +887,8 @@
         "subcontratista",
         "subcontratistas"
       ],
-      "revisar_detalle": true
+      "revisar_detalle": true,
+      "activa": false
     },
     {
       "nombre": "Subcontratos - LinkedIn (2)",
@@ -939,7 +940,8 @@
         "subcontratista",
         "subcontratistas"
       ],
-      "revisar_detalle": true
+      "revisar_detalle": true,
+      "activa": false
     },
     {
       "nombre": "Subcontratos - web",
@@ -991,7 +993,8 @@
         "subcontratista",
         "subcontratistas"
       ],
-      "revisar_detalle": true
+      "revisar_detalle": true,
+      "activa": false
     },
     {
       "nombre": "Constructoras - registro de proveedores",
@@ -1043,7 +1046,8 @@
         "subcontratista",
         "subcontratistas"
       ],
-      "revisar_detalle": true
+      "revisar_detalle": true,
+      "activa": false
     },
     {
       "nombre": "Licitaciones privadas (colegios, universidades, clínicas)",
@@ -1095,7 +1099,8 @@
         "subcontratista",
         "subcontratistas"
       ],
-      "revisar_detalle": true
+      "revisar_detalle": true,
+      "activa": false
     }
   ],
   "max_avisos_a_completar_por_ejecucion": 150,
@@ -1191,21 +1196,29 @@
     "veredas"
   ],
   "dias_maximos_aviso_correo": 7,
-  "diagnostico_urls": [
-    "https://convocatorias.petroperu.com.pe/Interface/m1006/list.js",
-    "https://html.duckduckgo.com/html/?kl=pe-es&q=site%3Alinkedin.com%2Fposts+subcontratistas+obra+Per%C3%BA"
-  ],
+  "diagnostico_urls": [],
   "reiniciar_primera_lectura": [
-    "Petroperú - noticias",
-    "Mineras - proveedores y licitaciones",
-    "ProActivo (prensa minera)",
+    "Constructoras - registro de proveedores",
     "Energiminas (prensa minera)",
+    "Licitaciones privadas (colegios, universidades, clínicas)",
+    "Mineras - proveedores y licitaciones",
+    "Petroperú - noticias",
+    "ProActivo (prensa minera)",
     "Rumbo Minero (prensa minera)",
-    "Subcontratos - noticias",
     "Subcontratos - LinkedIn (1)",
     "Subcontratos - LinkedIn (2)",
-    "Subcontratos - web",
-    "Constructoras - registro de proveedores",
-    "Licitaciones privadas (colegios, universidades, clínicas)"
-  ]
+    "Subcontratos - noticias",
+    "Subcontratos - web"
+  ],
+  "palabras_excluidas_en_detalle": [
+    "convocatoria cas",
+    "proceso cas",
+    "nombramiento del personal",
+    "cafae",
+    "concurso publico de meritos",
+    "concurso de meritos",
+    "sesion ordinaria",
+    "sesion extraordinaria"
+  ],
+  "version_filtros": 3
 }
