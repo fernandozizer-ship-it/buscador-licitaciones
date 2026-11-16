@@ -245,7 +245,7 @@ function filtrarAvisos() {
     ${a.obra ? `<div class="sub">${esc(a.titulo)}</div>` : ""}
     ${datos.length ? `<div class="meta">${datos.map(d => `<span>${esc(d)}</span>`).join("")}</div>` : ""}
     ${!a.obra && a.resumen ? `<div class="resumen">${esc(a.resumen)}</div>` : ""}
-    ${a.origen === "linkedin" ? `<div class="meta"><span class="tag" style="background:#0a66c2;color:#fff">in LinkedIn</span>${a.publicado_por ? `<span>👤 ${a.url_autor ? `<a href="${esc(a.url_autor)}" target="_blank" rel="noopener">${esc(a.publicado_por)}</a>` : esc(a.publicado_por)}</span>` : ""}${a.partidas ? `<span>🔧 ${esc(a.partidas)}</span>` : ""}${a.contacto ? `<span>✉️ ${esc(a.contacto)}</span>` : ""}</div>` : ""}
+    ${a.origen === "linkedin" ? `<div class="meta"><span class="tag" style="background:#0a66c2;color:#fff">in LinkedIn</span>${a.url && !/\/in\/|\/company\//.test(a.url) ? `<span><a href="${esc(a.url)}" target="_blank" rel="noopener">🔗 Ver publicación</a></span>` : ""}${a.publicado_por ? `<span>👤 ${a.url_autor ? `<a href="${esc(a.url_autor)}" target="_blank" rel="noopener">${esc(a.publicado_por)}</a>` : esc(a.publicado_por)}</span>` : ""}${a.partidas ? `<span>🔧 ${esc(a.partidas)}</span>` : ""}${a.contacto ? `<span>✉️ ${esc(a.contacto)}</span>` : ""}</div>` : ""}
     <div class="meta"><span>📅 ${esc(fechaAviso(a))}</span><span>🏷️ ${esc(a.sector || "Público")}</span><span>🔎 Procedencia: ${esc(a.procedencia || a.medio || a.fuente)}</span>${a.cui ? `<span><a href="https://ofi5.mef.gob.pe/ssi/" target="_blank" rel="noopener" title="Pega el CUI ${esc(a.cui)} en el buscador del MEF">📄 Consultar CUI ${esc(a.cui)} en el MEF</a></span>` : ""}</div>
   </article>`;}).join("") : `<div class="vacio">No hay avisos con estos filtros.</div>`;
 }

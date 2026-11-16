@@ -630,6 +630,17 @@ def fecha_desde_relativa(hace, barrido):
     return barrido - dt.timedelta(days=int(m.group(1)) * UNIDADES_LINKEDIN[m.group(2)])
 
 
+def fecha_de_id_linkedin(url, tz):
+    """El número de una publicación de LinkedIn (share/activity/ugcPost) lleva la hora en que se publicó."""
+    m = re.search(r"(?:share|activity|ugcPost)[-:](\d{18,20})", url or "")
+    if not m:
+        return None
+    try:
+        return dt.datetime.fromtimestamp((int(m.group(1)) >> 22) / 1000, tz)
+    except (ValueError, OverflowError, OSError):
+        return None
+
+
 def cargar_linkedin(ruta, almacen, ahora, config, normalizar, departamento_de):
     """Agrega al buscador las convocatorias del archivo linkedin.json. Devuelve las nuevas."""
     import os
@@ -647,8 +658,10 @@ def cargar_linkedin(ruta, almacen, ahora, config, normalizar, departamento_de):
         barrido = dt.datetime.fromisoformat(it.get("barrido") or datos.get("barrido"))
         if barrido.tzinfo is None:
             barrido = barrido.replace(tzinfo=ahora.tzinfo)
-        publicado = (dt.datetime.fromisoformat(it["fecha_publicacion"]).replace(tzinfo=ahora.tzinfo)
-                     if it.get("fecha_publicacion") else fecha_desde_relativa(it.get("hace"), barrido))
+        exacta = fecha_de_id_linkedin(it.get("url_publicacion"), ahora.tzinfo)
+        if it.get("fecha_publicacion"):
+            exacta = dt.datetime.fromisoformat(it["fecha_publicacion"]).replace(tzinfo=ahora.tzinfo)
+        publicado = exacta or fecha_desde_relativa(it.get("hace"), barrido)
         texto_n = normalizar(f"{it.get('titulo', '')} {it.get('resumen', '')} {it.get('lugar', '')}")
         aviso = {
             "id": aid, "origen": "linkedin", "fuente": "LinkedIn (barrido)", "medio": "LinkedIn",
@@ -660,7 +673,7 @@ def cargar_linkedin(ruta, almacen, ahora, config, normalizar, departamento_de):
             "lugar": it.get("lugar"), "partidas": it.get("partidas"),
             "departamento": it.get("departamento") or departamento_de(texto_n, [normalizar(it.get("lugar", ""))]),
             "fecha": (publicado or barrido).isoformat(timespec="minutes"), "fecha_real": publicado is not None,
-            "fecha_aproximada": not it.get("fecha_publicacion"), "hace_linkedin": it.get("hace"),
+            "fecha_aproximada": exacta is None, "hace_linkedin": it.get("hace"),
             "visto": barrido.isoformat(timespec="minutes"),
             "url": it.get("url_publicacion") or it.get("autor_url"), "url_autor": it.get("autor_url"),
             "enriquecido": True,
@@ -940,7 +953,7 @@ def html_correo(avisos):
   <div style="font-weight:bold;margin:5px 0"><a href="{e(a.get('url_original') or a['url'])}" style="color:#1d4ed8;text-decoration:none">{e(nombre[:300])}</a></div>
   {f'<div style="font-size:12px;color:#6b7280">{e(a["titulo"][:200])}</div>' if a.get("obra") else ""}
   <div style="color:#374151">{e(" · ".join(datos))}</div>
-  {f'<div style="font-size:13px">👤 {e(a.get("publicado_por") or "")}{" · ✉️ " + e(a["contacto"]) if a.get("contacto") else ""}{" · 🔧 " + e(a["partidas"]) if a.get("partidas") else ""}</div>' if a.get("origen") == "linkedin" else ""}
+  {f'<div style="font-size:13px"><a href="{e(a["url"])}" style="color:#0a66c2">🔗 Ver publicación en LinkedIn</a> · 👤 {e(a.get("publicado_por") or "")}{" · ✉️ " + e(a["contacto"]) if a.get("contacto") else ""}{" · 🔧 " + e(a["partidas"]) if a.get("partidas") else ""}</div>' if a.get("origen") == "linkedin" else ""}
   <div style="font-size:12px;color:#6b7280">📅 {e(fecha_legible(a))}{f' · <a href="{e(a["ficha_cui"])}" style="color:#1d4ed8">consultar CUI {e(a["cui"])} en el MEF</a>' if a.get("ficha_cui") else ""}</div>
 </td></tr>""")
     return ('<h3 style="color:#7c3aed">📣 Avisos: OxI, ANIN, PEIP, Petroperú, mineras y subcontratos</h3>'
