@@ -1,14 +1,18 @@
 {
   "fallas_seguidas": 0,
   "ultimo_error": "2026-11-15T19:47-05:00 La API del OECE no respondió (HTTPSConnectionPool(host='contratacionesabiertas.osce.gob.pe', port=443): Max retries exceeded with url: /api/v1/releasesAfter?format=json&order=desc (Caused by NameResolutionError(\"HTTPSConnection(host='contratacionesabiertas.osce.gob.pe', port=443)) en https://contratacionesabiertas.oece.gob.pe/api/v1/releasesAfter?format=json&order=desc",
-  "ultima_ejecucion_ok": "2026-11-16T03:27-05:00",
+  "ultima_ejecucion_ok": "2026-11-16T04:04-05:00",
   "ultimo_resumen": "0 nuevos, 0 prioritarias",
   "fuentes_avisos_vistas": [
     "ANIN - gob.pe",
     "ANIN - noticias",
+    "Constructoras - registro de proveedores",
+    "Energiminas (prensa minera)",
     "GORE Ica, Arequipa, Moquegua, Lima (gob.pe)",
     "Gobiernos regionales del sur - noticias",
     "Irrigaciones y riego (PSI, Mi Riego)",
+    "Licitaciones privadas (colegios, universidades, clínicas)",
+    "Mineras - proveedores y licitaciones",
     "Municipalidades de Ica (gob.pe)",
     "Municipalidades de Ica - noticias",
     "OxI - ProInversión (gob.pe)",
@@ -23,7 +27,14 @@
     "PNSU (saneamiento urbano)",
     "PRONIED (educación)",
     "PRONIS (salud)",
+    "Petroperú - noticias",
+    "ProActivo (prensa minera)",
     "Provías Nacional",
-    "Proyectos especiales regionales - noticias"
+    "Proyectos especiales regionales - noticias",
+    "Rumbo Minero (prensa minera)",
+    "Subcontratos - LinkedIn (1)",
+    "Subcontratos - LinkedIn (2)",
+    "Subcontratos - noticias",
+    "Subcontratos - web"
   ]
 }
