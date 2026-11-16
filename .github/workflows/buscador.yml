@@ -33,14 +33,13 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Preparar Python
-        shell: powershell
+        shell: cmd
         run: |
-          python -m venv .venv
-          .\.venv\Scripts\python.exe -m pip install --quiet --upgrade pip
-          .\.venv\Scripts\python.exe -m pip install --quiet -r requirements.txt
+          python -m venv .venv || exit /b 1
+          .venv\Scripts\python.exe -m pip install --quiet --disable-pip-version-check -r requirements.txt || exit /b 1
 
       - name: Buscar licitaciones y enviar correo
-        shell: powershell
+        shell: cmd
         env:
           CORREO_DESTINO: ${{ secrets.CORREO_DESTINO }}
           GMAIL_USUARIO: ${{ secrets.GMAIL_USUARIO }}
@@ -48,20 +47,14 @@ jobs:
           BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
           BREVO_REMITENTE: ${{ secrets.BREVO_REMITENTE }}
           DIAGNOSTICO: ${{ github.event.inputs.diagnostico == 'si' && '1' || '0' }}
-        run: .\.venv\Scripts\python.exe buscador\licitaciones.py
+        run: .venv\Scripts\python.exe buscador\licitaciones.py
 
       - name: Guardar resultados en el repositorio
         if: always()
-        shell: powershell
+        shell: cmd
         run: |
           git config user.name "buscador-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add docs estado.json
-          if (Test-Path muestra_api.json) { git add muestra_api.json }
-          git diff --cached --quiet
-          if ($LASTEXITCODE -ne 0) {
-            git commit -m "Actualizacion de licitaciones"
-            git push
-          } else {
-            Write-Output "Sin cambios que guardar"
-          }
+          if exist muestra_api.json git add muestra_api.json
+          git diff --cached --quiet && (echo Sin cambios que guardar) || (git commit -m "Actualizacion de licitaciones" && git push)
