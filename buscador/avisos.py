@@ -351,6 +351,28 @@ def leer_detalle(sesion, url, con_html=False):
 
 
 RE_PDF_GOBPE = re.compile(r'href="(https://cdn\.www\.gob\.pe/uploads/document/file/[^"]+?\.pdf[^"]*)"', re.I)
+RE_PDF_CUALQUIERA = re.compile(r'href="([^"]+?\.pdf(?:\?[^"]*)?)"', re.I)
+RE_SUBPAGINA_GOBPE = re.compile(r'href="((?:https://www\.gob\.pe)?/institucion/[^"/]+/(?:informes-publicaciones|normas-legales)/\d+[^"]*)"', re.I)
+
+
+def enlaces_pdf(html_pagina, base="https://www.gob.pe"):
+    """Enlaces a PDF de una página de gob.pe (los del CDN primero)."""
+    urls = [html.unescape(u) for u in RE_PDF_GOBPE.findall(html_pagina or "")]
+    for u in RE_PDF_CUALQUIERA.findall(html_pagina or ""):
+        u = html.unescape(u)
+        urls.append(u if u.startswith("http") else base + (u if u.startswith("/") else "/" + u))
+    return list(dict.fromkeys(urls))
+
+
+def subpaginas_gobpe(html_pagina, propia="", maximo=3):
+    """En colecciones y campañas de gob.pe, los PDF están dentro de cada publicación de la lista."""
+    vistas = []
+    for u in RE_SUBPAGINA_GOBPE.findall(html_pagina or ""):
+        u = html.unescape(u).split("#")[0]
+        u = u if u.startswith("http") else "https://www.gob.pe" + u
+        if u.rstrip("/") != propia.rstrip("/") and u not in vistas:
+            vistas.append(u)
+    return vistas[:maximo]
 
 
 def texto_de_pdfs(sesion, html_pagina, max_pdfs=2, max_paginas=4):
@@ -361,7 +383,7 @@ def texto_de_pdfs(sesion, html_pagina, max_pdfs=2, max_paginas=4):
         return ""
     import io
     textos = []
-    for url in list(dict.fromkeys(html.unescape(u) for u in RE_PDF_GOBPE.findall(html_pagina or "")))[:max_pdfs]:
+    for url in enlaces_pdf(html_pagina)[:max_pdfs]:
         try:
             r = sesion.get(url, timeout=90)
             if r.status_code != 200 or len(r.content) > 15_000_000:
@@ -481,6 +503,10 @@ def tipo_contratacion(texto_n):
     return None
 
 
+VERSION_PDF = 2
+URL_FICHA_CUI = "https://ofi5.mef.gob.pe/ssi/"  # Seguimiento de Inversiones del MEF: se busca por CUI
+
+
 def enriquecer(sesion, aviso, normalizar, departamento_de, especialidades_rx, contexto_rx=None, excluir_rx=None):
     """Abre la publicación y completa: clase, obra, tipo, especialidad, entidad, monto, CUI y fecha."""
     url_real = resolver_google(sesion, aviso["url"])
@@ -491,8 +517,17 @@ def enriquecer(sesion, aviso, normalizar, departamento_de, especialidades_rx, co
     titulo = aviso.get("titulo", "")
     texto = f"{titulo}. {aviso.get('resumen', '')} {detalle[:12000]}"
     if "gob.pe" in url_real and not (RE_OBRA_COMILLAS.search(texto) or RE_OBRA_LIBRE.search(texto)):
-        texto_pdf = texto_de_pdfs(sesion, html_det)
-        aviso["pdf_revisado"] = True
+        # Bases y convocatorias: el nombre del proyecto suele estar solo en el PDF adjunto
+        html_con_pdfs = html_det
+        if not enlaces_pdf(html_det):
+            for sub in subpaginas_gobpe(html_det, url_real):
+                _, html_sub = leer_detalle(sesion, sub, con_html=True)
+                html_con_pdfs += html_sub
+                if enlaces_pdf(html_sub):
+                    break
+        texto_pdf = texto_de_pdfs(sesion, html_con_pdfs)
+        aviso["pdf_revisado"] = VERSION_PDF
+        print(f"    PDF: {len(enlaces_pdf(html_con_pdfs))} adjuntos, {len(texto_pdf)} caracteres leídos | {titulo[:70]}")
         if texto_pdf:
             texto += " " + texto_pdf
     texto_n = normalizar(texto)
@@ -751,7 +786,7 @@ def revisar(config, almacen, estado, sesion, normalizar, departamento_de, ahora)
     pendientes = [a for a in nuevos_para_correo if not a.get("enriquecido")]
     pendientes += [a for a in almacen.values() if a.get("pendiente_contexto") and a not in pendientes]
     pendientes += [a for a in almacen.values() if not a.get("enriquecido") and a not in pendientes]
-    pendientes += [a for a in almacen.values() if not a.get("obra") and not a.get("pdf_revisado")
+    pendientes += [a for a in almacen.values() if not a.get("obra") and a.get("pdf_revisado") != VERSION_PDF
                    and "gob.pe" in (a.get("url_original") or a.get("url") or "") and a not in pendientes]
     tope = int(config.get("max_avisos_a_completar_por_ejecucion", 80))
     for a in pendientes[:tope]:
@@ -764,6 +799,13 @@ def revisar(config, almacen, estado, sesion, normalizar, departamento_de, ahora)
         time.sleep(0.4)
     if pendientes:
         print(f"  Avisos completados con detalle: {min(len(pendientes), tope)} de {len(pendientes)} pendientes")
+    # Sin nombre de obra: completar con el de otro aviso del mismo CUI, y siempre dejar la ficha del MEF
+    obra_por_cui = {a["cui"]: a["obra"] for a in almacen.values() if a.get("cui") and a.get("obra")}
+    for a in almacen.values():
+        if a.get("cui"):
+            a["ficha_cui"] = URL_FICHA_CUI.format(cui=a["cui"])
+            if not a.get("obra") and a["cui"] in obra_por_cui:
+                a["obra"] = obra_por_cui[a["cui"]]
     # Tras abrir el detalle, descartar lo que resultó no ser contratación de obra
     descartados = [k for k, a in almacen.items() if a.get("descartar") or (
         a.get("enriquecido") and coincide(normalizar(f"{a.get('titulo')} {a.get('obra', '')}"), excluir_rx))]
@@ -825,7 +867,7 @@ def html_correo(avisos):
   <div style="font-weight:bold;margin:5px 0"><a href="{e(a.get('url_original') or a['url'])}" style="color:#1d4ed8;text-decoration:none">{e(nombre[:300])}</a></div>
   {f'<div style="font-size:12px;color:#6b7280">{e(a["titulo"][:200])}</div>' if a.get("obra") else ""}
   <div style="color:#374151">{e(" · ".join(datos))}</div>
-  <div style="font-size:12px;color:#6b7280">📅 {e(fecha_legible(a))}</div>
+  <div style="font-size:12px;color:#6b7280">📅 {e(fecha_legible(a))}{f' · <a href="{e(a["ficha_cui"])}" style="color:#1d4ed8">consultar CUI {e(a["cui"])} en el MEF</a>' if a.get("ficha_cui") else ""}</div>
 </td></tr>""")
     return ('<h3 style="color:#7c3aed">📣 Avisos: OxI, ANIN, PEIP, Petroperú, mineras y subcontratos</h3>'
             '<table style="border-collapse:collapse;width:100%">' + "".join(filas) + "</table>")

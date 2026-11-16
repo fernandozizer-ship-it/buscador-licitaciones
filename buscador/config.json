@@ -249,7 +249,16 @@
     "ver documentos",
     "estado: concluido",
     "que es obras por impuestos",
-    "preguntas frecuentes"
+    "preguntas frecuentes",
+    "asume como",
+    "asumio como",
+    "nuevo coordinador",
+    "nueva coordinadora",
+    "designa como",
+    "juramenta",
+    "juramento como",
+    "nuevo director ejecutivo",
+    "nuevo gerente"
   ],
   "dias_historial_avisos": 180,
   "fuentes_avisos": [
@@ -1232,7 +1241,7 @@
     "sesion ordinaria",
     "sesion extraordinaria"
   ],
-  "version_filtros": 5,
+  "version_filtros": 6,
   "depurar_fuentes": [
     "Mineras - proveedores y licitaciones",
     "ProActivo (prensa minera)",
