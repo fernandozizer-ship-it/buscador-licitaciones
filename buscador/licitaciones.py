@@ -286,23 +286,42 @@ def convertir(release, especialidades_rx):
 # ----------------------------------------------------------------------------
 # Descarga
 # ----------------------------------------------------------------------------
-def pedir(sesion, url, intentos=4):
+CABECERAS = {
+    "User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                   "(KHTML, like Gecko) Chrome/130.0 Safari/537.36"),
+    "Accept": "application/json, text/plain, */*",
+    "Accept-Language": "es-PE,es;q=0.9",
+    "Referer": "https://contratacionesabiertas.oece.gob.pe/",
+}
+
+
+def pedir(sesion, url, intentos=3):
+    """Pide una página. Si el dominio nuevo (.oece.) es rechazado, prueba el antiguo (.osce.)."""
+    variantes = [url]
+    if ".oece." in url:
+        variantes.append(url.replace(".oece.", ".osce."))
     ultimo = None
-    for i in range(intentos):
-        try:
-            r = sesion.get(url, timeout=60)
-            if r.status_code == 200:
-                return r.json()
-            ultimo = f"HTTP {r.status_code}"
-        except (requests.RequestException, ValueError) as e:
-            ultimo = str(e)
-        time.sleep(3 * (i + 1))
+    for variante in variantes:
+        for i in range(intentos):
+            try:
+                r = sesion.get(variante, timeout=60)
+                if r.status_code == 200:
+                    return r.json()
+                ultimo = (f"HTTP {r.status_code} | servidor: {r.headers.get('server', '?')} | "
+                          f"respuesta: {r.text[:250].strip()!r}")
+                print(f"  intento {i + 1} en {variante[:70]}… → {ultimo}")
+                if r.status_code in (401, 403):
+                    break  # bloqueo: no insistir con la misma dirección
+            except (requests.RequestException, ValueError) as e:
+                ultimo = str(e)[:250]
+                print(f"  intento {i + 1} → error: {ultimo}")
+            time.sleep(3 * (i + 1))
     raise RuntimeError(f"La API del OECE no respondió ({ultimo}) en {url}")
 
 
 def descargar(desde, max_paginas, pausa, diagnostico=False):
     sesion = requests.Session()
-    sesion.headers["User-Agent"] = "buscador-licitaciones/1.0 (uso personal, consultas diarias)"
+    sesion.headers.update(CABECERAS)
     url, paginas, viejas_seguidas = API_INICIO, 0, 0
     releases, muestra, mas_antigua = [], None, None
     while url and paginas < max_paginas:
