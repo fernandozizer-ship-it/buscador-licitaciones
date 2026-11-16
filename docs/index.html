@@ -254,7 +254,13 @@ document.querySelectorAll(".pestana").forEach(b => b.addEventListener("click", (
 fetch("avisos.json?v=" + Date.now()).then(r => r.ok ? r.json() : {avisos: []}).then(data => {
   AVISOS = (data.avisos || []).map(a => ({...a, _txt: norm([a.titulo, a.obra, a.entidad, a.empresa, a.sector, a.procedencia, a.tipo, a.cui, a.resumen, a.grupo, a.departamento, a.medio, a.fuente, (a.especialidades || []).join(" ")].join(" "))}));
   [...new Set(AVISOS.map(a => a.clase).filter(Boolean))].forEach(c => { const o = document.createElement("option"); o.value = c; o.textContent = c; $("aclase").appendChild(o); });
-  llenar($("agrupo"), AVISOS.map(a => a.grupo));
+  const GRUPOS_FIJOS = ["Obras por Impuestos", "ANIN", "PEIP y programas especiales", "Proyectos especiales regionales",
+    "Gobiernos regionales y municipios", "Mineras", "Petroperú", "Subcontratos de constructoras", "Licitaciones privadas"];
+  AVISOS.forEach(a => { if (a.grupo === "Mineras y grandes proyectos") a.grupo = "Mineras"; });
+  GRUPOS_FIJOS.concat(AVISOS.map(a => a.grupo)).filter((g, i, arr) => g && arr.indexOf(g) === i).forEach(g => {
+    const n = AVISOS.filter(a => a.grupo === g).length;
+    const o = document.createElement("option"); o.value = g; o.textContent = g + " (" + n + ")"; $("agrupo").appendChild(o);
+  });
   llenar($("asector"), AVISOS.map(a => a.sector || "Público"));
   llenar($("adep"), AVISOS.map(a => a.departamento));
   $("numAvisos").textContent = AVISOS.length ? "(" + AVISOS.length + ")" : "";
