@@ -243,7 +243,13 @@
     "asistente de",
     "practicante",
     "bolsa de trabajo",
-    "convocatoria laboral"
+    "convocatoria laboral",
+    "asociacion publico privada",
+    "asociaciones publico privadas",
+    "ver documentos",
+    "estado: concluido",
+    "que es obras por impuestos",
+    "preguntas frecuentes"
   ],
   "dias_historial_avisos": 180,
   "fuentes_avisos": [
@@ -580,7 +586,7 @@
     },
     {
       "nombre": "Mineras - proveedores y licitaciones",
-      "grupo": "Mineras y grandes proyectos",
+      "grupo": "Mineras",
       "tipo": "rss",
       "consulta": "(Antamina OR \"Cerro Verde\" OR \"Southern Peru\" OR \"Las Bambas\" OR Quellaveco OR \"Anglo American\" OR Marcobre OR Shougang OR Antapaccay OR Buenaventura OR Yanacocha OR Volcan OR Hudbay OR Nexa OR Poderosa OR Minsur OR Chinalco OR \"Tía María\" OR Zafranal OR Coroccohuayco) (proveedores OR licitación OR licitará OR convoca OR contratistas OR \"empresas locales\" OR \"empresas comunales\") when:30d",
       "sector": "Privado",
@@ -633,7 +639,7 @@
     },
     {
       "nombre": "ProActivo (prensa minera)",
-      "grupo": "Mineras y grandes proyectos",
+      "grupo": "Mineras",
       "tipo": "rss",
       "url": "https://proactivo.com.pe/feed/",
       "sector": "Privado",
@@ -686,7 +692,7 @@
     },
     {
       "nombre": "Energiminas (prensa minera)",
-      "grupo": "Mineras y grandes proyectos",
+      "grupo": "Mineras",
       "tipo": "rss",
       "url": "https://energiminas.com/feed/",
       "sector": "Privado",
@@ -739,7 +745,7 @@
     },
     {
       "nombre": "Rumbo Minero (prensa minera)",
-      "grupo": "Mineras y grandes proyectos",
+      "grupo": "Mineras",
       "tipo": "rss",
       "url": "https://www.rumbominero.com/feed/",
       "sector": "Privado",
@@ -1226,7 +1232,7 @@
     "sesion ordinaria",
     "sesion extraordinaria"
   ],
-  "version_filtros": 4,
+  "version_filtros": 5,
   "depurar_fuentes": [
     "Mineras - proveedores y licitaciones",
     "ProActivo (prensa minera)",
@@ -1234,5 +1240,19 @@
     "Rumbo Minero (prensa minera)",
     "Subcontratos - noticias",
     "Petroperú - noticias"
+  ],
+  "renombrar_grupos": {
+    "Mineras y grandes proyectos": "Mineras"
+  },
+  "grupos_buscador": [
+    "Obras por Impuestos",
+    "ANIN",
+    "PEIP y programas especiales",
+    "Proyectos especiales regionales",
+    "Gobiernos regionales y municipios",
+    "Mineras",
+    "Petroperú",
+    "Subcontratos de constructoras",
+    "Licitaciones privadas"
   ]
 }

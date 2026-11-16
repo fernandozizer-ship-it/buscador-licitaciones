@@ -236,7 +236,7 @@ def leer_pagina(sesion, fuente):
             if not href or href.startswith(("#", "mailto:", "javascript:")):
                 continue
             absoluta = urljoin(url, href)
-            if not patron.search(absoluta) or len(texto) < 8:
+            if not patron.search(absoluta) or len(texto) < 8 or len(texto) > 260 or "Ver documentos" in texto:
                 continue
             clave = url_canonica(absoluta)
             if clave in vistos:
@@ -338,15 +338,40 @@ def leer_proinversion(sesion, fuente):
     return items
 
 
-def leer_detalle(sesion, url):
+def leer_detalle(sesion, url, con_html=False):
     try:
         r = sesion.get(url, timeout=60)
         if r.status_code == 200:
             r.encoding = r.encoding or "utf-8"
-            return texto_plano(r.text)[:20000]
+            texto = texto_plano(r.text)[:20000]
+            return (texto, r.text) if con_html else texto
     except Exception as e:  # noqa: BLE001
         print(f"    detalle falló {url[:70]}: {e}")
-    return ""
+    return ("", "") if con_html else ""
+
+
+RE_PDF_GOBPE = re.compile(r'href="(https://cdn\.www\.gob\.pe/uploads/document/file/[^"]+?\.pdf[^"]*)"', re.I)
+
+
+def texto_de_pdfs(sesion, html_pagina, max_pdfs=2, max_paginas=4):
+    """Lee las primeras páginas de los PDF adjuntos (bases, convocatoria) de una publicación de gob.pe."""
+    try:
+        from pypdf import PdfReader
+    except ImportError:
+        return ""
+    import io
+    textos = []
+    for url in list(dict.fromkeys(html.unescape(u) for u in RE_PDF_GOBPE.findall(html_pagina or "")))[:max_pdfs]:
+        try:
+            r = sesion.get(url, timeout=90)
+            if r.status_code != 200 or len(r.content) > 15_000_000:
+                continue
+            lector = PdfReader(io.BytesIO(r.content))
+            for pagina in lector.pages[:max_paginas]:
+                textos.append(pagina.extract_text() or "")
+        except Exception as e:  # noqa: BLE001
+            print(f"    no se pudo leer el PDF {url[:70]}: {str(e)[:100]}")
+    return re.sub(r"\s+", " ", " ".join(textos))[:15000]
 
 
 # ----------------------------------------------------------------------------
@@ -462,9 +487,14 @@ def enriquecer(sesion, aviso, normalizar, departamento_de, especialidades_rx, co
     if url_real != aviso["url"]:
         aviso["url_original"] = url_real
     aviso["procedencia"] = procedencia_de(url_real, aviso.get("medio"))
-    detalle = leer_detalle(sesion, url_real) if not url_real.lower().endswith(".pdf") else ""
+    detalle, html_det = leer_detalle(sesion, url_real, con_html=True) if not url_real.lower().endswith(".pdf") else ("", "")
     titulo = aviso.get("titulo", "")
     texto = f"{titulo}. {aviso.get('resumen', '')} {detalle[:12000]}"
+    if "gob.pe" in url_real and not (RE_OBRA_COMILLAS.search(texto) or RE_OBRA_LIBRE.search(texto)):
+        texto_pdf = texto_de_pdfs(sesion, html_det)
+        aviso["pdf_revisado"] = True
+        if texto_pdf:
+            texto += " " + texto_pdf
     texto_n = normalizar(texto)
     titulo_n = normalizar(titulo)
     if detalle and contexto_rx and not aviso.get("sin_contexto_ok") and not coincide(normalizar(f"{titulo} {detalle[:8000]}"), contexto_rx):
@@ -571,6 +601,7 @@ def revisar(config, almacen, estado, sesion, normalizar, departamento_de, ahora)
                 del almacen[k]  # ya se revisó por dentro y no es de obra
                 continue
             a["pendiente_contexto"] = True  # se verificará al abrir el detalle
+        a["grupo"] = config.get("renombrar_grupos", {}).get(a.get("grupo"), a.get("grupo"))
         a.setdefault("sector", sector_por_grupo(a.get("grupo", "")))
         a.setdefault("procedencia", procedencia_de(a.get("url_original") or a.get("url"), a.get("medio")))
         if not a.get("departamento"):
@@ -720,6 +751,8 @@ def revisar(config, almacen, estado, sesion, normalizar, departamento_de, ahora)
     pendientes = [a for a in nuevos_para_correo if not a.get("enriquecido")]
     pendientes += [a for a in almacen.values() if a.get("pendiente_contexto") and a not in pendientes]
     pendientes += [a for a in almacen.values() if not a.get("enriquecido") and a not in pendientes]
+    pendientes += [a for a in almacen.values() if not a.get("obra") and not a.get("pdf_revisado")
+                   and "gob.pe" in (a.get("url_original") or a.get("url") or "") and a not in pendientes]
     tope = int(config.get("max_avisos_a_completar_por_ejecucion", 80))
     for a in pendientes[:tope]:
         if a.get("fecha_real") is None:
