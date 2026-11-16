@@ -296,10 +296,8 @@ CABECERAS = {
 
 
 def pedir(sesion, url, intentos=3):
-    """Pide una página. Si el dominio nuevo (.oece.) es rechazado, prueba el antiguo (.osce.)."""
+    """Pide una página de la API; deja en el registro la respuesta exacta si falla."""
     variantes = [url]
-    if ".oece." in url:
-        variantes.append(url.replace(".oece.", ".osce."))
     ultimo = None
     for variante in variantes:
         for i in range(intentos):
