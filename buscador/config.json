@@ -183,7 +183,17 @@
     "concurso escolar",
     "concurso de dibujo",
     "voluntariado",
-    "cargo de confianza"
+    "cargo de confianza",
+    "donacion",
+    "bienes muebles",
+    "dados de baja",
+    "consejo directivo",
+    "miembros independientes",
+    "adquisicion de",
+    "suministro de",
+    "subasta",
+    "arrendamiento",
+    "alquiler"
   ],
   "dias_historial_avisos": 180,
   "fuentes_avisos": [
@@ -207,6 +217,15 @@
       "urls": [
         "https://www.gob.pe/institucion/proinversion/noticias",
         "https://www.gob.pe/institucion/proinversion/informes-publicaciones"
+      ],
+      "palabras_clave": [
+        "proceso de seleccion",
+        "convocatoria del proceso",
+        "primera convocatoria",
+        "segunda convocatoria",
+        "bases del proceso",
+        "expresion de interes",
+        "expresiones de interes"
       ]
     },
     {
@@ -216,7 +235,13 @@
       "urls": [
         "https://www.investinperu.pe/es/oxi"
       ],
-      "patron": "investinperu\\.pe/.+"
+      "patron": "investinperu\\.pe/.+",
+      "palabras_clave": [
+        "proceso de seleccion n",
+        "convocatoria del proceso",
+        "primera convocatoria",
+        "segunda convocatoria"
+      ]
     },
     {
       "nombre": "ANIN - gob.pe",
@@ -295,6 +320,143 @@
       "grupo": "PEIP y programas especiales",
       "tipo": "rss",
       "consulta": "(\"Proyecto Especial de Inversión Pública\" OR PEIP OR \"Escuelas Bicentenario\" OR PRONIS OR \"gobierno a gobierno\") (convocatoria OR licitación OR \"acercamiento al mercado\" OR contratación) when:14d"
+    },
+    {
+      "nombre": "Proyectos especiales regionales - noticias",
+      "grupo": "Proyectos especiales regionales",
+      "tipo": "rss",
+      "consulta": "(Chavimochic OR \"Majes Siguas\" OR AUTODEMA OR \"Tambo Ccaracocha\" OR PETACC OR \"Olmos Tinajones\" OR Chinecas OR \"Pasto Grande\" OR \"Proyecto Especial Tacna\" OR \"Jequetepeque Zaña\" OR \"Puyango Tumbes\") (licitación OR convocatoria OR concurso OR \"proceso de selección\" OR \"acercamiento al mercado\" OR \"obras por impuestos\") when:30d",
+      "palabras_clave": [
+        "proceso de seleccion",
+        "convocatoria",
+        "convoca",
+        "licitacion",
+        "licitara",
+        "concurso",
+        "acercamiento al mercado",
+        "obras por impuestos",
+        "oxi",
+        "buena pro",
+        "expediente tecnico",
+        "ejecucion de obra",
+        "supervision"
+      ]
+    },
+    {
+      "nombre": "Irrigaciones y riego (PSI, Mi Riego)",
+      "grupo": "Proyectos especiales regionales",
+      "tipo": "rss",
+      "consulta": "(\"Programa Subsectorial de Irrigaciones\" OR \"Fondo Mi Riego\" OR \"PSI Midagri\") (licitación OR convocatoria OR \"proceso de selección\" OR obra) when:30d",
+      "palabras_clave": [
+        "proceso de seleccion",
+        "convocatoria",
+        "convoca",
+        "licitacion",
+        "licitara",
+        "concurso",
+        "acercamiento al mercado",
+        "obras por impuestos",
+        "oxi",
+        "buena pro",
+        "expediente tecnico",
+        "ejecucion de obra",
+        "supervision"
+      ]
+    },
+    {
+      "nombre": "Gobiernos regionales del sur - noticias",
+      "grupo": "Gobiernos regionales y municipios",
+      "tipo": "rss",
+      "consulta": "(\"Gobierno Regional de Ica\" OR \"Gobierno Regional de Arequipa\" OR \"Gobierno Regional de Moquegua\" OR \"Gobierno Regional de Lima\" OR \"Gobierno Regional del Callao\") (licitación OR convocatoria OR \"proceso de selección\" OR \"obras por impuestos\") when:14d",
+      "palabras_clave": [
+        "proceso de seleccion",
+        "convocatoria",
+        "convoca",
+        "licitacion",
+        "licitara",
+        "concurso",
+        "acercamiento al mercado",
+        "obras por impuestos",
+        "oxi",
+        "buena pro",
+        "expediente tecnico",
+        "ejecucion de obra",
+        "supervision"
+      ]
+    },
+    {
+      "nombre": "Municipalidades de Ica - noticias",
+      "grupo": "Gobiernos regionales y municipios",
+      "tipo": "rss",
+      "consulta": "(\"Municipalidad Provincial de Pisco\" OR \"Municipalidad Provincial de Ica\" OR \"Municipalidad Provincial de Chincha\" OR \"Municipalidad Provincial de Nasca\" OR \"Municipalidad Provincial de Palpa\" OR \"Municipalidad Distrital de San Clemente\" OR \"Municipalidad Distrital de Paracas\" OR \"Municipalidad Distrital de Independencia\") (licitación OR convocatoria OR \"obras por impuestos\" OR \"proceso de selección\" OR obra) when:14d",
+      "palabras_clave": [
+        "proceso de seleccion",
+        "convocatoria",
+        "convoca",
+        "licitacion",
+        "licitara",
+        "concurso",
+        "acercamiento al mercado",
+        "obras por impuestos",
+        "oxi",
+        "buena pro",
+        "expediente tecnico",
+        "ejecucion de obra",
+        "supervision"
+      ]
+    },
+    {
+      "nombre": "GORE Ica, Arequipa, Moquegua, Lima (gob.pe)",
+      "grupo": "Gobiernos regionales y municipios",
+      "tipo": "pagina",
+      "revisar_detalle": true,
+      "urls": [
+        "https://www.gob.pe/institucion/regionica/noticias",
+        "https://www.gob.pe/institucion/regionica/informes-publicaciones",
+        "https://www.gob.pe/institucion/regionarequipa/noticias",
+        "https://www.gob.pe/institucion/regionmoquegua/noticias",
+        "https://www.gob.pe/institucion/regionlima/noticias",
+        "https://www.gob.pe/institucion/regionlima/informes-publicaciones"
+      ],
+      "palabras_clave": [
+        "proceso de seleccion",
+        "convocatoria",
+        "convoca",
+        "bases",
+        "expresion de interes",
+        "expresiones de interes",
+        "acercamiento al mercado",
+        "licitacion",
+        "buena pro",
+        "obras por impuestos",
+        "oxi"
+      ]
+    },
+    {
+      "nombre": "Municipalidades de Ica (gob.pe)",
+      "grupo": "Gobiernos regionales y municipios",
+      "tipo": "pagina",
+      "revisar_detalle": true,
+      "urls": [
+        "https://www.gob.pe/institucion/munipisco/noticias",
+        "https://www.gob.pe/institucion/munipisco/informes-publicaciones",
+        "https://www.gob.pe/institucion/muniica/noticias",
+        "https://www.gob.pe/institucion/munichincha/noticias",
+        "https://www.gob.pe/institucion/muninasca/noticias"
+      ],
+      "palabras_clave": [
+        "proceso de seleccion",
+        "convocatoria",
+        "convoca",
+        "bases",
+        "expresion de interes",
+        "expresiones de interes",
+        "acercamiento al mercado",
+        "licitacion",
+        "buena pro",
+        "obras por impuestos",
+        "oxi"
+      ]
     }
   ]
 }

@@ -175,11 +175,35 @@ def leer_detalle(sesion, url):
 # ----------------------------------------------------------------------------
 # Proceso principal de avisos
 # ----------------------------------------------------------------------------
+RE_SLUG_GOBPE = re.compile(r"gob\.pe/institucion/([a-z0-9\-]+)/", re.I)
+
+
+def pistas_de(url, titulo, medio=""):
+    """Pistas para ubicar la región: la entidad dueña de la página en gob.pe y el título."""
+    pistas = []
+    m = RE_SLUG_GOBPE.search(url or "")
+    if m:
+        slug = m.group(1).lower()
+        slug = re.sub(r"^(gobierno-regional-de-|gobierno-regional-|region|gore-?|gr-?|municipalidad-?(provincial-|distrital-)?(de-)?|muni|mp|md)", "", slug)
+        pistas.append(slug.replace("-", " "))
+    pistas += [titulo or "", medio or ""]
+    return pistas
+
+
 def revisar(config, almacen, estado, sesion, normalizar, departamento_de, ahora):
     """Lee todas las fuentes, actualiza 'almacen' (dict id->aviso) y devuelve los avisos nuevos
     que corresponde enviar por correo."""
     claves_rx = compilar(config.get("palabras_clave_avisos", []), normalizar)
     excluir_rx = compilar(config.get("palabras_excluidas_avisos", []), normalizar)
+    # Limpieza de lo ya guardado con las reglas actuales (región y exclusiones)
+    for k in list(almacen):
+        a = almacen[k]
+        if coincide(normalizar(f"{a.get('titulo', '')} {a.get('resumen', '')}"), excluir_rx):
+            del almacen[k]
+            continue
+        if not a.get("departamento"):
+            a["departamento"] = departamento_de(normalizar(f"{a.get('titulo', '')} {a.get('resumen', '')}"),
+                                                pistas_de(a.get("url"), a.get("titulo"), a.get("medio")))
     dias_correo = int(config.get("dias_primera_carga", 3))
     fuentes_vistas = set(estado.get("fuentes_avisos_vistas", []))
     titulos_existentes = {normalizar(a.get("titulo"))[:120] for a in almacen.values()}
@@ -190,6 +214,7 @@ def revisar(config, almacen, estado, sesion, normalizar, departamento_de, ahora)
         if fuente.get("activa") is False:
             continue
         primera_vez = nombre not in fuentes_vistas
+        claves_fuente = compilar(fuente["palabras_clave"], normalizar) if fuente.get("palabras_clave") else claves_rx
         try:
             items = leer_rss(sesion, fuente) if fuente.get("tipo") == "rss" else leer_pagina(sesion, fuente)
         except Exception as e:  # noqa: BLE001
@@ -205,12 +230,12 @@ def revisar(config, almacen, estado, sesion, normalizar, departamento_de, ahora)
             texto_n = normalizar(f"{it['titulo']} {it.get('resumen', '')}")
             if coincide(texto_n, excluir_rx):
                 continue
-            relevante = coincide(texto_n, claves_rx)
+            relevante = coincide(texto_n, claves_fuente)
             detalle = ""
             # Títulos genéricos ("Comunicado") se revisan por dentro, salvo en la primera lectura
             if not relevante and fuente.get("revisar_detalle") and not primera_vez:
                 detalle = leer_detalle(sesion, it["url"])
-                relevante = coincide(normalizar(detalle), claves_rx) and not coincide(normalizar(detalle[:3000]), excluir_rx)
+                relevante = coincide(normalizar(detalle), claves_fuente) and not coincide(normalizar(detalle[:3000]), excluir_rx)
                 time.sleep(0.5)
             if not relevante:
                 continue
@@ -223,7 +248,8 @@ def revisar(config, almacen, estado, sesion, normalizar, departamento_de, ahora)
                 "titulo": it["titulo"],
                 "resumen": it.get("resumen") or (fragmento(detalle, claves_rx, normalizar) if detalle else ""),
                 "medio": it.get("medio", ""),
-                "departamento": departamento_de(normalizar(texto_completo)),
+                "departamento": departamento_de(normalizar(texto_completo),
+                                                pistas_de(it["url"], it["titulo"], it.get("medio"))),
                 "fecha": (fecha or ahora).isoformat(timespec="minutes"),
                 "visto": ahora.isoformat(timespec="minutes"),
                 "url": it["url"],

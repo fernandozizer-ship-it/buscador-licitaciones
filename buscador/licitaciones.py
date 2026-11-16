@@ -695,9 +695,39 @@ def enviar_correo(asunto, cuerpo_html):
     return False
 
 
-def departamento_aviso(texto_n):
-    dep, prov, _ = ubicar({}, texto_n, "")
-    return dep
+_DEP_COMPACTO = {k.replace(" ", ""): v for k, v in DEPARTAMENTOS.items()}
+_PROV_COMPACTO = {k.replace(" ", ""): v for k, v in PROVINCIAS.items()}
+
+
+# Siglas de gobiernos regionales que aparecen en la nomenclatura de los procesos OxI
+SIGLAS_GORE = {r"grsm": "San Martín", r"grll": "La Libertad", r"gr\.?\s?lamb": "Lambayeque", r"grl": "Lima",
+               r"gr\.?\s?cusco|grc": "Cusco", r"gr\.?\s?ica|grica": "Ica", r"grmoq|gr\.?\s?moquegua": "Moquegua",
+               r"grtacna|gr\.?\s?tacna": "Tacna", r"grpiura|gr\.?\s?piura": "Piura", r"grpuno|gr\.?\s?puno": "Puno",
+               r"grjunin|gr\.?\s?junin": "Junín", r"grucayali|gr\.?\s?ucayali|gru": "Ucayali",
+               r"grancash|gr\.?\s?ancash": "Áncash", r"grcaj|gr\.?\s?cajamarca": "Cajamarca", r"grhco": "Huánuco"}
+RE_SIGLAS_GORE = [(re.compile(r"(?<![a-z])(?:" + k + r")(?![a-z])"), v) for k, v in SIGLAS_GORE.items()]
+
+
+def departamento_aviso(texto_n, pistas=()):
+    """Región de un aviso: primero lo explícito ("departamento de…", "provincia de…"),
+    luego la entidad dueña de la página (regioncusco, munipisco) y por último el título."""
+    dep = ubicar({}, texto_n, "")[0]
+    if dep:
+        return dep
+    for rx, nombre in RE_SIGLAS_GORE:
+        if rx.search(texto_n):
+            return nombre
+    for pista in pistas:
+        p = normalizar(pista)
+        if not p:
+            continue
+        compacto = p.replace(" ", "")
+        dep = _DEP_COMPACTO.get(compacto) or _PROV_COMPACTO.get(compacto)
+        if not dep:
+            dep = ubicar({}, p, p)[0] or _departamento_en(re.sub(r"[/\-_.]", " ", p))
+        if dep:
+            return dep
+    return None
 
 
 def revisar_avisos(config, estado, inicio):
