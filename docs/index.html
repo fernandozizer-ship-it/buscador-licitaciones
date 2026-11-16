@@ -43,6 +43,8 @@
   .pestana.activa { background:#1f2933; color:#fff; border-color:#1f2933; }
   .pestana .num { font-size:12px; opacity:.75; margin-left:4px; }
   .tag.aviso { background:#ede9fe; color:#5b21b6; }
+  .clase { font-size:11px; padding:2px 8px; border-radius:20px; color:#fff; font-weight:600; }
+  .sub { font-size:12px; color:var(--suave); margin-top:3px; }
   .resumen { font-size:13px; color:#3e4c59; margin-top:6px; line-height:1.4; }
   [hidden] { display:none !important; }
 </style>
@@ -87,6 +89,8 @@
     <section class="filtros">
       <div class="ancho"><label for="aq">Buscar en avisos (entidad, proyecto, región…)</label>
         <input id="aq" type="search" placeholder="Ej.: pisco, hospital, acercamiento al mercado"></div>
+      <div><label for="aclase">Tipo de aviso</label>
+        <select id="aclase"><option value="procesos" selected>Solo procesos</option><option value="">Todos</option></select></div>
       <div><label for="agrupo">Grupo</label><select id="agrupo"><option value="">Todos</option></select></div>
       <div><label for="adep">Región</label><select id="adep"><option value="">Todo el país</option></select></div>
       <div><label for="adias">Fecha</label>
@@ -212,28 +216,43 @@ $("limpiar").addEventListener("click", () => {
 
 // ---------- Avisos (Fase 2) ----------
 let AVISOS = [];
+const COLOR_CLASE = {"Convocatoria / proceso de selección": "#15803d", "Documento de un proceso en curso": "#1d4ed8",
+  "Acercamiento al mercado": "#b45309", "Resultado / buena pro": "#b91c1c", "Nota sobre una convocatoria": "#0f766e", "Nota de prensa": "#6b7280"};
+function fechaAviso(a) {
+  if (a.fecha_real === false || (a.fecha_real == null && a.fecha === a.visto)) return "Fecha no indicada (detectado " + fecha(a.visto).slice(0, 10) + ")";
+  return fecha(a.fecha).slice(0, 10);
+}
 function filtrarAvisos() {
   const palabras = norm($("aq").value).split(/\s+/).filter(Boolean);
-  const grupo = $("agrupo").value, dep = $("adep").value, dias = parseInt($("adias").value, 10);
+  const clase = $("aclase").value, grupo = $("agrupo").value, dep = $("adep").value, dias = parseInt($("adias").value, 10);
   const desde = dias ? Date.now() - dias * 86400000 : null;
-  const res = AVISOS.filter(a => (!grupo || a.grupo === grupo) && (!dep || a.departamento === dep)
+  const res = AVISOS.filter(a => (!clase || (clase === "procesos" ? a.clase !== "Nota de prensa" : a.clase === clase))
+    && (!grupo || a.grupo === grupo) && (!dep || a.departamento === dep)
     && (!desde || new Date(a.fecha).getTime() >= desde) && palabras.every(p => a._txt.includes(p)));
   $("acontador").textContent = res.length + " avisos de " + AVISOS.length;
-  $("alista").innerHTML = res.length ? res.slice(0, 300).map(a => `<article class="tarjeta">
-    <div class="etiquetas"><span class="tag aviso">${esc(a.grupo)}</span>${a.departamento ? `<span class="tag">📍 ${esc(a.departamento)}</span>` : ""}<span class="tag">${esc(a.medio || a.fuente)}</span></div>
-    <div class="titulo"><a href="${esc(a.url)}" target="_blank" rel="noopener">${esc(a.titulo)}</a></div>
-    ${a.resumen ? `<div class="resumen">${esc(a.resumen)}</div>` : ""}
-    <div class="meta"><span>📅 ${esc(fecha(a.fecha))}</span><span>Fuente: ${esc(a.fuente)}</span></div>
-  </article>`).join("") : `<div class="vacio">No hay avisos con estos filtros.</div>`;
+  $("alista").innerHTML = res.length ? res.slice(0, 300).map(a => {
+    const cl = a.clase || "Aviso sin revisar";
+    const chips = [a.tipo, ...(a.especialidades || [])].filter(Boolean).map(x => `<span class="tag">${esc(x)}</span>`).join("");
+    const datos = [a.entidad && "🏛️ " + a.entidad, a.departamento && "📍 " + a.departamento,
+      a.monto && "💰 S/ " + Math.round(a.monto).toLocaleString("es-PE"), a.cui && "CUI " + a.cui].filter(Boolean);
+    return `<article class="tarjeta">
+    <div class="etiquetas"><span class="clase" style="background:${COLOR_CLASE[cl] || "#6b7280"}">${esc(cl)}</span><span class="tag aviso">${esc(a.grupo)}</span>${chips}</div>
+    <div class="titulo"><a href="${esc(a.url_original || a.url)}" target="_blank" rel="noopener">${esc(a.obra || a.titulo)}</a></div>
+    ${a.obra ? `<div class="sub">${esc(a.titulo)}</div>` : ""}
+    ${datos.length ? `<div class="meta">${datos.map(d => `<span>${esc(d)}</span>`).join("")}</div>` : ""}
+    ${!a.obra && a.resumen ? `<div class="resumen">${esc(a.resumen)}</div>` : ""}
+    <div class="meta"><span>📅 ${esc(fechaAviso(a))}</span><span>Fuente: ${esc(a.medio || a.fuente)}</span></div>
+  </article>`;}).join("") : `<div class="vacio">No hay avisos con estos filtros.</div>`;
 }
-["aq","agrupo","adep","adias"].forEach(c => $(c).addEventListener(c === "aq" ? "input" : "change", filtrarAvisos));
+["aq","aclase","agrupo","adep","adias"].forEach(c => $(c).addEventListener(c === "aq" ? "input" : "change", filtrarAvisos));
 document.querySelectorAll(".pestana").forEach(b => b.addEventListener("click", () => {
   document.querySelectorAll(".pestana").forEach(x => x.classList.toggle("activa", x === b));
   $("vistaSeace").hidden = b.dataset.vista !== "seace";
   $("vistaAvisos").hidden = b.dataset.vista !== "avisos";
 }));
 fetch("avisos.json?v=" + Date.now()).then(r => r.ok ? r.json() : {avisos: []}).then(data => {
-  AVISOS = (data.avisos || []).map(a => ({...a, _txt: norm([a.titulo, a.resumen, a.grupo, a.departamento, a.medio, a.fuente].join(" "))}));
+  AVISOS = (data.avisos || []).map(a => ({...a, _txt: norm([a.titulo, a.obra, a.entidad, a.tipo, a.cui, a.resumen, a.grupo, a.departamento, a.medio, a.fuente, (a.especialidades || []).join(" ")].join(" "))}));
+  [...new Set(AVISOS.map(a => a.clase).filter(Boolean))].forEach(c => { const o = document.createElement("option"); o.value = c; o.textContent = c; $("aclase").appendChild(o); });
   llenar($("agrupo"), AVISOS.map(a => a.grupo));
   llenar($("adep"), AVISOS.map(a => a.departamento));
   $("numAvisos").textContent = AVISOS.length ? "(" + AVISOS.length + ")" : "";
