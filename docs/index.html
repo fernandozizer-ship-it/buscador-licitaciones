@@ -201,7 +201,7 @@ function tarjeta(r) {
     <div class="meta"><span>🏛️ ${esc(r.entidad)}</span><span>📍 ${esc(lugar)}</span></div>
     <div class="meta"><span>💰 <b>${esc(soles(r))}</b></span><span>📅 Publicado: ${esc(fecha(r.publicado))}</span>${r.postores ? `<span>👥 ${esc(r.postores)} participantes registrados</span>` : ""}</div>
     <div class="meta fechas">${r.consultas_fin ? `<span>❓ Consultas: ${esc(dia(r.consultas_inicio))} al ${esc(dia(r.consultas_fin))}</span>` : ""}
-      ${r.cierre ? `<span>📨 Propuestas: <b>${esc(dia(r.cierre))}</b> <small>${r.cronograma_fuente === "bases" ? "(según bases)" : "(aprox. — confirmar en el SEACE)"}</small></span>` : ""}
+      ${r.cierre ? `<span>📨 Propuestas: <b>${esc(dia(r.cierre))}</b> <small>${r.cronograma_fuente === "bases" ? "(según cronograma)" : "(aprox. — confirmar en el cronograma del SEACE)"}</small></span>` : ""}
       ${r.buena_pro ? `<span>🏆 Buena pro: ${esc(dia(r.buena_pro))}</span>` : ""}
       ${r.bases_url ? `<span><a href="${esc(r.bases_url)}" target="_blank" rel="noopener">📄 Bases</a></span>` : ""}</div>
     <div class="codigo">${esc(r.titulo)} · ${esc(r.sector || "Público")} · Procedencia: ${esc(r.procedencia || "SEACE (OECE)")}</div>

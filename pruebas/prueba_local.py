@@ -18,7 +18,7 @@ def rel(ocid, cat, titulo, desc, entidad, monto, cierre=MANANA, region=None, sta
         "buyer": {"id": "B1", "name": entidad},
         "parties": [{"id": "B1", "name": entidad, "roles": ["buyer"], "address": {"region": region}}],
         "tender": {"title": titulo, "description": desc, "mainProcurementCategory": cat,
-                   "procurementMethodDetails": "Licitación Pública", "status": status,
+                   "procurementMethodDetails": "Licitación Pública Abreviada", "status": status,
                    "value": {"amount": monto, "currency": "PEN"},
                    "tenderPeriod": {"startDate": HOY.isoformat(), "endDate": HOY.isoformat()},
                    # el plazo real: propuestas ~6 días después del fin de consultas

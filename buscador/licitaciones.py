@@ -400,15 +400,28 @@ def cronograma_de_texto(texto, convocatoria=None):
     return resultado
 
 
+def sumar_dias_habiles(fecha, dias):
+    while dias > 0:
+        fecha += dt.timedelta(days=1)
+        if fecha.weekday() < 5:
+            dias -= 1
+    return fecha
+
+
 def completar_fechas(r, hoy):
     """Fecha de presentación de propuestas (de las bases o estimada) y etapa actual del proceso."""
     conv = parse_fecha(r.get("convocatoria")) or parse_fecha(r.get("publicado"))
     fin_consultas = parse_fecha(r.get("consultas_fin"))
     propuestas = parse_fecha(r.get("propuestas")) if r.get("cronograma_fuente") == "bases" else None
     if propuestas is None:
-        # Estimado con los plazos habituales: propuestas ~6 días después del fin de consultas
-        if fin_consultas:
+        # Las bases estándar (Ley 32069) no traen fechas: remiten al cronograma del SEACE, que no está en
+        # los datos abiertos. Se estima con los plazos habituales desde el fin de consultas (dato real):
+        #  - procedimientos abreviados: propuestas ~6 días calendario después (p. ej. consultas 18/11 → 24/11)
+        #  - licitación / concurso público: integración de bases + 7 días hábiles como mínimo
+        if fin_consultas and "abreviad" in normalizar(r.get("procedimiento")):
             propuestas = fin_consultas + dt.timedelta(days=6)
+        elif fin_consultas:
+            propuestas = sumar_dias_habiles(fin_consultas, 8)
         elif conv:
             propuestas = conv.replace(hour=23, minute=59) + dt.timedelta(days=11)
         # Si hubo prórroga, la absolución o integración de bases se publicó después: propuestas ~5 días más tarde
@@ -439,7 +452,8 @@ def completar_fechas(r, hoy):
 
 def leer_cronogramas(registros, prioridad_ids, config, hoy):
     """Abre las bases (PDF del SEACE) de los procesos vigentes y lee su cronograma."""
-    tope = int(config.get("max_bases_por_ejecucion", 30))
+    # Desactivado por defecto: las bases estándar de la Ley 32069 no incluyen el cronograma
+    tope = int(config.get("max_bases_por_ejecucion", 0))
     if tope <= 0:
         return
     try:
@@ -470,11 +484,6 @@ def leer_cronogramas(registros, prioridad_ids, config, hoy):
             texto = " ".join((p.extract_text() or "") for p in lector.pages[:25])
             leidos += 1
             crono = cronograma_de_texto(texto, parse_fecha(r.get("convocatoria")) or parse_fecha(r.get("publicado")))
-            if not crono.get("propuestas") and leidos <= int(config.get("diagnostico_bases", 0)):
-                tn = normalizar(texto)
-                for clave in ("cronograma", "presentacion de", "propuesta"):
-                    for m in list(re.finditer(clave, tn))[:3]:
-                        print(f"    DIAG[{clave}] …{tn[max(0, m.start() - 80):m.start() + 260]}…")
             if crono.get("propuestas"):
                 encontrados += 1
                 r["propuestas"] = iso(crono["propuestas"])
@@ -786,7 +795,7 @@ def fila_html(reg):
   <div style="font-weight:bold;margin:3px 0"><a href="{e(reg['url'])}" style="color:#1d4ed8;text-decoration:none">{e(nombre[:300])}</a></div>
   <div>{e(reg['entidad'])}</div>
   <div style="color:#374151">📍 {e(lugar)} &nbsp;|&nbsp; 💰 <b>{e(fmt_monto(reg))}</b></div>
-  <div style="color:#374151">📅 Publicado: {e(fmt_dia(reg.get('publicado')))} &nbsp;|&nbsp; ❓ Consultas hasta: {e(fmt_dia(reg.get('consultas_fin')))} &nbsp;|&nbsp; 📨 <b>Propuestas: {e(fmt_dia(reg.get('cierre')))}{" (según bases)" if reg.get("cronograma_fuente") == "bases" else " (aprox.)"}</b>{f" &nbsp;|&nbsp; 🏆 Buena pro: {e(fmt_dia(reg.get('buena_pro')))}" if reg.get("buena_pro") else ""}</div>
+  <div style="color:#374151">📅 Publicado: {e(fmt_dia(reg.get('publicado')))} &nbsp;|&nbsp; ❓ Consultas hasta: {e(fmt_dia(reg.get('consultas_fin')))} &nbsp;|&nbsp; 📨 <b>Propuestas: {e(fmt_dia(reg.get('cierre')))}{" (según cronograma)" if reg.get("cronograma_fuente") == "bases" else " (aprox., confirmar en el SEACE)"}</b>{f" &nbsp;|&nbsp; 🏆 Buena pro: {e(fmt_dia(reg.get('buena_pro')))}" if reg.get("buena_pro") else ""}</div>
   {f'<div style="font-size:12px"><a href="{e(reg["bases_url"])}">📄 Descargar bases</a></div>' if reg.get("bases_url") else ""}
   <div style="font-size:12px;color:#6b7280">{e(reg['titulo'])}</div>
 </td></tr>"""
