@@ -1,10 +1,15 @@
 name: Buscador de licitaciones
 
+# Se ejecuta en TU computadora (runner "self-hosted" con Windows), porque el portal
+# del OECE rechaza las consultas que vienen de los servidores de GitHub (fuera del Peru).
+# Si la PC esta apagada a la hora programada, la tarea espera (hasta 24 h) y corre
+# apenas la PC se encienda.
+
 on:
   schedule:
-    - cron: "7 12 * * *"    # 7:07 a. m. hora Perú (todos los días)
-    - cron: "7 23 * * *"    # 6:07 p. m. hora Perú (todos los días)
-  workflow_dispatch:         # botón "Run workflow" para ejecutarlo a mano
+    - cron: "7 12 * * *"    # 7:07 a. m. hora Peru
+    - cron: "7 23 * * *"    # 6:07 p. m. hora Peru
+  workflow_dispatch:
     inputs:
       diagnostico:
         description: "Guardar muestra cruda de la API (si/no)"
@@ -19,19 +24,23 @@ concurrency:
 
 jobs:
   buscar:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Windows]
     timeout-minutes: 60
+    env:
+      PYTHONUTF8: "1"
+      PYTHONIOENCODING: "utf-8"
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Instalar dependencias
-        run: pip install -r requirements.txt
+      - name: Preparar Python
+        shell: powershell
+        run: |
+          python -m venv .venv
+          .\.venv\Scripts\python.exe -m pip install --quiet --upgrade pip
+          .\.venv\Scripts\python.exe -m pip install --quiet -r requirements.txt
 
       - name: Buscar licitaciones y enviar correo
+        shell: powershell
         env:
           CORREO_DESTINO: ${{ secrets.CORREO_DESTINO }}
           GMAIL_USUARIO: ${{ secrets.GMAIL_USUARIO }}
@@ -39,18 +48,20 @@ jobs:
           BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
           BREVO_REMITENTE: ${{ secrets.BREVO_REMITENTE }}
           DIAGNOSTICO: ${{ github.event.inputs.diagnostico == 'si' && '1' || '0' }}
-        run: python buscador/licitaciones.py
+        run: .\.venv\Scripts\python.exe buscador\licitaciones.py
 
       - name: Guardar resultados en el repositorio
         if: always()
+        shell: powershell
         run: |
           git config user.name "buscador-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add docs estado.json
-          if [ -f muestra_api.json ]; then git add muestra_api.json; fi
-          if git diff --cached --quiet; then
-            echo "Sin cambios que guardar"
-          else
-            git commit -m "Actualización de licitaciones $(date -u +'%Y-%m-%d %H:%M') UTC"
+          if (Test-Path muestra_api.json) { git add muestra_api.json }
+          git diff --cached --quiet
+          if ($LASTEXITCODE -ne 0) {
+            git commit -m "Actualizacion de licitaciones"
             git push
-          fi
+          } else {
+            Write-Output "Sin cambios que guardar"
+          }
