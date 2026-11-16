@@ -470,6 +470,11 @@ def leer_cronogramas(registros, prioridad_ids, config, hoy):
             texto = " ".join((p.extract_text() or "") for p in lector.pages[:25])
             leidos += 1
             crono = cronograma_de_texto(texto, parse_fecha(r.get("convocatoria")) or parse_fecha(r.get("publicado")))
+            if not crono.get("propuestas") and leidos <= int(config.get("diagnostico_bases", 0)):
+                tn = normalizar(texto)
+                for clave in ("cronograma", "presentacion de", "propuesta"):
+                    for m in list(re.finditer(clave, tn))[:3]:
+                        print(f"    DIAG[{clave}] …{tn[max(0, m.start() - 80):m.start() + 260]}…")
             if crono.get("propuestas"):
                 encontrados += 1
                 r["propuestas"] = iso(crono["propuestas"])

@@ -1264,5 +1264,6 @@
     "Subcontratos de constructoras",
     "Licitaciones privadas"
   ],
-  "max_bases_por_ejecucion": 30
+  "max_bases_por_ejecucion": 5,
+  "diagnostico_bases": 3
 }
