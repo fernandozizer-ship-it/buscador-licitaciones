@@ -615,6 +615,67 @@ def pistas_de(url, titulo, medio=""):
     return pistas
 
 
+# ----------------------------------------------------------------------------
+# Convocatorias encontradas en LinkedIn (barrido a pedido, archivo buscador/linkedin.json)
+# ----------------------------------------------------------------------------
+UNIDADES_LINKEDIN = {"min": 1 / 1440, "h": 1 / 24, "d": 1, "dia": 1, "dias": 1, "sem": 7, "semana": 7, "semanas": 7,
+                     "mes": 30, "meses": 30, "ano": 365, "anos": 365, "año": 365, "años": 365}
+
+
+def fecha_desde_relativa(hace, barrido):
+    """'4 sem' leído el 2026-11-16 -> 2026-10-19 (LinkedIn solo muestra el tiempo transcurrido)."""
+    m = re.match(r"\s*(\d+)\s*([a-zñ]+)", (hace or "").lower())
+    if not m or m.group(2) not in UNIDADES_LINKEDIN:
+        return None
+    return barrido - dt.timedelta(days=int(m.group(1)) * UNIDADES_LINKEDIN[m.group(2)])
+
+
+def cargar_linkedin(ruta, almacen, ahora, config, normalizar, departamento_de):
+    """Agrega al buscador las convocatorias del archivo linkedin.json. Devuelve las nuevas."""
+    import os
+    if not os.path.exists(ruta):
+        return []
+    try:
+        with open(ruta, encoding="utf-8") as f:
+            datos = json.load(f)
+    except (OSError, ValueError) as e:
+        print(f"  [LinkedIn] no se pudo leer linkedin.json: {e}")
+        return []
+    nuevos = []
+    for it in datos.get("convocatorias", []):
+        aid = "linkedin-" + hashlib.sha1(f"{it.get('autor_url')}|{it.get('titulo')}".encode("utf-8")).hexdigest()[:16]
+        barrido = dt.datetime.fromisoformat(it.get("barrido") or datos.get("barrido"))
+        if barrido.tzinfo is None:
+            barrido = barrido.replace(tzinfo=ahora.tzinfo)
+        publicado = (dt.datetime.fromisoformat(it["fecha_publicacion"]).replace(tzinfo=ahora.tzinfo)
+                     if it.get("fecha_publicacion") else fecha_desde_relativa(it.get("hace"), barrido))
+        texto_n = normalizar(f"{it.get('titulo', '')} {it.get('resumen', '')} {it.get('lugar', '')}")
+        aviso = {
+            "id": aid, "origen": "linkedin", "fuente": "LinkedIn (barrido)", "medio": "LinkedIn",
+            "grupo": it.get("grupo", "Subcontratos de constructoras"),
+            "clase": "Búsqueda de subcontratistas / proveedores",
+            "sector": it.get("sector", "Privado"), "procedencia": "LinkedIn",
+            "titulo": it["titulo"], "obra": it.get("obra"), "resumen": it.get("resumen", ""),
+            "empresa": it.get("empresa"), "publicado_por": it.get("publicado_por"), "contacto": it.get("contacto"),
+            "lugar": it.get("lugar"), "partidas": it.get("partidas"),
+            "departamento": it.get("departamento") or departamento_de(texto_n, [normalizar(it.get("lugar", ""))]),
+            "fecha": (publicado or barrido).isoformat(timespec="minutes"), "fecha_real": publicado is not None,
+            "fecha_aproximada": not it.get("fecha_publicacion"), "hace_linkedin": it.get("hace"),
+            "visto": barrido.isoformat(timespec="minutes"),
+            "url": it.get("url_publicacion") or it.get("autor_url"), "url_autor": it.get("autor_url"),
+            "enriquecido": True,
+        }
+        aviso["especialidades"] = [n for n, k in config.get("especialidades", {}).items()
+                                   if coincide(texto_n, compilar(k, normalizar))]
+        if aid not in almacen:
+            nuevos.append(aviso)
+        else:
+            aviso["visto"] = almacen[aid].get("visto", aviso["visto"])
+        almacen[aid] = aviso
+    print(f"  [LinkedIn (barrido)] {len(datos.get('convocatorias', []))} en el archivo, {len(nuevos)} nuevos")
+    return nuevos
+
+
 def revisar(config, almacen, estado, sesion, normalizar, departamento_de, ahora):
     """Lee todas las fuentes, actualiza 'almacen' (dict id->aviso) y devuelve los avisos nuevos
     que corresponde enviar por correo."""
@@ -628,6 +689,8 @@ def revisar(config, almacen, estado, sesion, normalizar, departamento_de, ahora)
     # Limpieza de lo ya guardado con las reglas actuales (región y exclusiones)
     for k in list(almacen):
         a = almacen[k]
+        if a.get("origen") == "linkedin":
+            continue  # revisadas a mano en el barrido: no se filtran de nuevo
         if coincide(normalizar(f"{a.get('titulo', '')} {a.get('resumen', '')}"), excluir_rx):
             del almacen[k]
             continue
@@ -778,6 +841,11 @@ def revisar(config, almacen, estado, sesion, normalizar, departamento_de, ahora)
         resumen[nombre] = f"{len(items)} leídos, {agregados} nuevos"
         print(f"  [{nombre}] {resumen[nombre]}{' (primera lectura: sin correo)' if primera_vez else ''}")
 
+    import os
+    ruta_li = config.get("archivo_linkedin") or os.path.join(os.path.dirname(os.path.abspath(__file__)), "linkedin.json")
+    for aviso in cargar_linkedin(ruta_li, almacen, ahora, config, normalizar, departamento_de):
+        if correo_ok(_f(aviso["fecha"]) if aviso.get("fecha_real") else None, False):
+            nuevos_para_correo.append(aviso)
     estado["fuentes_avisos_vistas"] = sorted(fuentes_vistas)
     estado["avisos_rechazados"] = sorted(rechazados)[-4000:]
 
@@ -807,8 +875,8 @@ def revisar(config, almacen, estado, sesion, normalizar, departamento_de, ahora)
             if not a.get("obra") and a["cui"] in obra_por_cui:
                 a["obra"] = obra_por_cui[a["cui"]]
     # Tras abrir el detalle, descartar lo que resultó no ser contratación de obra
-    descartados = [k for k, a in almacen.items() if a.get("descartar") or (
-        a.get("enriquecido") and coincide(normalizar(f"{a.get('titulo')} {a.get('obra', '')}"), excluir_rx))]
+    descartados = [k for k, a in almacen.items() if a.get("origen") != "linkedin" and (a.get("descartar") or (
+        a.get("enriquecido") and coincide(normalizar(f"{a.get('titulo')} {a.get('obra', '')}"), excluir_rx)))]
     for k in descartados:
         del almacen[k]
     if descartados:
@@ -841,6 +909,11 @@ ORDEN_CLASE = list(COLORES_CLASE)
 
 
 def fecha_legible(a):
+    if a.get("origen") == "linkedin":
+        f = (a.get("fecha") or "")[:10]
+        if a.get("fecha_aproximada") and a.get("hace_linkedin"):
+            return f"Publicado en LinkedIn hace {a['hace_linkedin']} (≈ {f}, visto el {(a.get('visto') or '')[:10]})"
+        return f"Publicado en LinkedIn el {f}"
     if a.get("fecha_real") is False or (a.get("fecha_real") is None and a.get("fecha") == a.get("visto")):
         return "Fecha no indicada (detectado " + (a.get("visto") or "")[:10] + ")"
     return (a.get("fecha") or "")[:10]
@@ -867,6 +940,7 @@ def html_correo(avisos):
   <div style="font-weight:bold;margin:5px 0"><a href="{e(a.get('url_original') or a['url'])}" style="color:#1d4ed8;text-decoration:none">{e(nombre[:300])}</a></div>
   {f'<div style="font-size:12px;color:#6b7280">{e(a["titulo"][:200])}</div>' if a.get("obra") else ""}
   <div style="color:#374151">{e(" · ".join(datos))}</div>
+  {f'<div style="font-size:13px">👤 {e(a.get("publicado_por") or "")}{" · ✉️ " + e(a["contacto"]) if a.get("contacto") else ""}{" · 🔧 " + e(a["partidas"]) if a.get("partidas") else ""}</div>' if a.get("origen") == "linkedin" else ""}
   <div style="font-size:12px;color:#6b7280">📅 {e(fecha_legible(a))}{f' · <a href="{e(a["ficha_cui"])}" style="color:#1d4ed8">consultar CUI {e(a["cui"])} en el MEF</a>' if a.get("ficha_cui") else ""}</div>
 </td></tr>""")
     return ('<h3 style="color:#7c3aed">📣 Avisos: OxI, ANIN, PEIP, Petroperú, mineras y subcontratos</h3>'

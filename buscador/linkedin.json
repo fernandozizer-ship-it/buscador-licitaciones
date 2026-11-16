@@ -1,0 +1,58 @@
+{
+  "nota": "Convocatorias encontradas en LinkedIn en los barridos a pedido. Claude actualiza este archivo; el buscador lo agrega a la pestaña de avisos con procedencia LinkedIn.",
+  "barrido": "2026-11-16T13:00-05:00",
+  "convocatorias": [
+    {
+      "titulo": "Obras Hergon busca subcontratistas de edificación para colegio por Obras por Impuestos en Pumamarca (Apurímac)",
+      "obra": "Mejoramiento y ampliación del servicio educativo de los niveles inicial (N.º 759), primaria (I.E. N.º 50833 Antonio Cano Cáceres) y secundaria de Pumamarca",
+      "empresa": "Obras Hergon S.A.",
+      "publicado_por": "Arnol Bonilla (Obras Hergon S.A.)",
+      "sector": "Privado",
+      "lugar": "C.P. Pumamarca, distrito de Tambobamba, provincia de Cotabambas, Apurímac",
+      "departamento": "Apurímac",
+      "partidas": "Encofrado y desencofrado, acero de refuerzo, vaciado de concreto, albañilería y acabados",
+      "resumen": "Constructora que ejecuta un colegio público por OxI busca empresas subcontratistas con experiencia en edificaciones (de preferencia colegios u obra pública), personal propio, capataz a tiempo completo y disponibilidad para zona altoandina. Frentes principales desde noviembre de 2026.",
+      "contacto": "arnol.bonilla@hergonsa.pe (asunto: Subcontrato Pumamarca – [Partida])",
+      "hace": "4 semanas",
+      "autor_url": "https://www.linkedin.com/in/arnol-bonilla-cc/"
+    },
+    {
+      "titulo": "Proyecto en ejecución convoca proveedores y empresas especializadas por partidas (Lima, Arequipa, Cusco y Apurímac)",
+      "empresa": "No indicada en la publicación",
+      "publicado_por": "Joel Jesús Córdova Quispe",
+      "sector": "Privado",
+      "lugar": "Lima, Arequipa, Cusco y Apurímac",
+      "departamento": "Arequipa",
+      "partidas": "Obras preliminares, movimiento de tierras, demoliciones, concreto y otras partidas",
+      "resumen": "Busca proveedores, contratistas y empresas especializadas con capacidad de suministro o ejecución para distintas partidas de construcción. No dice el nombre del proyecto ni de la empresa: conviene preguntar por mensaje.",
+      "contacto": "Mensaje por LinkedIn",
+      "hace": "2 meses",
+      "autor_url": "https://www.linkedin.com/in/joel-jes%C3%BAs-c%C3%B3rdova-quispe-b0912b163/"
+    },
+    {
+      "titulo": "Universidad Peruana Cayetano Heredia registra empresas constructoras para futuras obras medianas",
+      "empresa": "Universidad Peruana Cayetano Heredia (UPCH)",
+      "publicado_por": "Nila Carrasco Quevedo (UPCH, Servicios y Proveedores)",
+      "sector": "Privado",
+      "lugar": "Lima",
+      "departamento": "Lima",
+      "partidas": "Infraestructura, remodelación, acondicionamiento y mantenimiento",
+      "resumen": "Identifica constructoras con experiencia en obras medianas (de preferencia universidades, colegios o clínicas) para invitarlas a futuras convocatorias. Piden presentación corporativa, experiencia, documentos de homologación y datos de contacto.",
+      "contacto": "nila.carrasco.q@upch.pe",
+      "hace": "2 meses",
+      "autor_url": "https://www.linkedin.com/in/nila-lizabet-carrasco-quevedo-5b086a59/"
+    },
+    {
+      "titulo": "Tesga Energy arma red de subcontratistas homologados para obras civiles y eléctricas en el sur del Perú",
+      "empresa": "Tesga Energy",
+      "publicado_por": "Tesga Energy (página de la empresa)",
+      "sector": "Privado",
+      "lugar": "Sur del Perú, sierra y selva",
+      "partidas": "Obras civiles para proyectos de energía, montaje fotovoltaico y de estructuras, media tensión, cableado estructurado y fibra óptica",
+      "resumen": "Busca empresas subcontratistas para homologar y participar en proyectos de energía fotovoltaica, electrificación e infraestructura tecnológica; prioriza empresas del sur, sierra y selva.",
+      "contacto": "comercial@tesga.pe · WhatsApp 905 464 460",
+      "hace": "3 meses",
+      "autor_url": "https://www.linkedin.com/company/tesgaenergy/"
+    }
+  ]
+}
