@@ -159,9 +159,14 @@ def leer_web(sesion, fuente):
                                   "resumen": texto_plano(it.findtext("description") or "")[:300], "_fecha_web": True})
     except Exception as e:  # noqa: BLE001
         print(f"    Bing no respondió: {str(e)[:120]}")
+    if items and not resultados_relevantes(items, consulta):
+        print("    Bing devolvió resultados sin relación con la búsqueda; se prueba DuckDuckGo")
+        items = []
     if not items:
         try:
             r = sesion.get("https://html.duckduckgo.com/html/?kl=pe-es&q=" + quote_plus(consulta), timeout=60)
+            if r.status_code != 200 or "result__a" not in r.text:
+                print(f"    DuckDuckGo no entregó resultados (HTTP {r.status_code})")
             bloques = re.findall(r'class="result__a"[^>]*href="([^"]+)"[^>]*>(.*?)</a>.*?class="result__snippet"[^>]*>(.*?)</a>',
                                  r.text, re.S)
             for href, tit, snip in bloques:
@@ -172,6 +177,16 @@ def leer_web(sesion, fuente):
         except Exception as e:  # noqa: BLE001
             print(f"    DuckDuckGo no respondió: {str(e)[:120]}")
     return items
+
+
+def resultados_relevantes(items, consulta):
+    """True si al menos un resultado contiene alguna palabra significativa de la búsqueda."""
+    palabras = {w.lower() for w in re.findall(r"[A-Za-zÁÉÍÓÚáéíóúñÑ]{6,}", re.sub(r"site:\S+", "", consulta))}
+    palabras -= {"linkedin", "posts"}
+    if not palabras:
+        return True
+    texto = " ".join(f"{i['titulo']} {i.get('resumen', '')}" for i in items).lower()
+    return any(p in texto for p in palabras)
 
 
 def requests_unquote(texto):
@@ -571,6 +586,14 @@ def revisar(config, almacen, estado, sesion, normalizar, departamento_de, ahora)
             return True
         return not primera_vez and fecha >= ahora - dt.timedelta(days=dias_max)
     fuentes_vistas = set(estado.get("fuentes_avisos_vistas", []))
+    rechazados = set(estado.get("avisos_rechazados", []))
+    # Fuentes cuyo lector cambió: su próxima lectura vuelve a ser "primera" (sin avalancha de correo)
+    ya = set(estado.get("fuentes_reiniciadas", []))
+    for nombre_r in config.get("reiniciar_primera_lectura", []):
+        if nombre_r not in ya:
+            fuentes_vistas.discard(nombre_r)
+            ya.add(nombre_r)
+    estado["fuentes_reiniciadas"] = sorted(ya)
     titulos_existentes = {normalizar(a.get("titulo"))[:120] for a in almacen.values()}
     nuevos_para_correo, resumen = [], {}
 
@@ -627,9 +650,13 @@ def revisar(config, almacen, estado, sesion, normalizar, departamento_de, ahora)
             relevante = coincide(texto_n, claves_fuente)
             con_contexto = tiene_contexto(texto_n)
             detalle = ""
-            # Se abre la publicación cuando el título es genérico ("Comunicado") o no dice si es de obra
-            if fuente.get("revisar_detalle") and (not relevante or not con_contexto) and (relevante or not primera_vez):
-                detalle = leer_detalle(sesion, it["url"])
+            if aid in rechazados:
+                continue
+            # Se abre la publicación cuando el título no dice si es de obra; los títulos genéricos
+            # ("Comunicado") solo se abren en páginas oficiales (no en noticias ni buscadores)
+            generico_ok = fuente.get("tipo") == "pagina" and not primera_vez
+            if fuente.get("revisar_detalle") and ((relevante and not con_contexto) or (not relevante and generico_ok)):
+                detalle = leer_detalle(sesion, resolver_google(sesion, it["url"]))
                 detalle_n = normalizar(detalle[:8000])
                 relevante = relevante or coincide(detalle_n, claves_fuente)
                 con_contexto = con_contexto or tiene_contexto(detalle_n)
@@ -637,6 +664,8 @@ def revisar(config, almacen, estado, sesion, normalizar, departamento_de, ahora)
                     relevante = False
                 time.sleep(0.5)
             if not (relevante and con_contexto):
+                if detalle:
+                    rechazados.add(aid)  # ya se revisó por dentro: no volver a abrirlo
                 continue
             fecha = it.get("fecha") or (fecha_es(detalle) if detalle else None)
             texto_completo = f"{it['titulo']} {it.get('resumen', '')} {detalle[:4000]}"
@@ -671,6 +700,7 @@ def revisar(config, almacen, estado, sesion, normalizar, departamento_de, ahora)
         print(f"  [{nombre}] {resumen[nombre]}{' (primera lectura: sin correo)' if primera_vez else ''}")
 
     estado["fuentes_avisos_vistas"] = sorted(fuentes_vistas)
+    estado["avisos_rechazados"] = sorted(rechazados)[-4000:]
 
     # Completar datos legibles (obra, tipo, monto, CUI, fecha); primero lo que va al correo
     especialidades_rx = {n: compilar(k, normalizar) for n, k in config.get("especialidades", {}).items()}
