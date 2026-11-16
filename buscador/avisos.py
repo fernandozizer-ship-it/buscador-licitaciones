@@ -135,6 +135,76 @@ def leer_rss(sesion, fuente):
     return items
 
 
+def leer_web(sesion, fuente):
+    """Búsqueda web (incluye publicaciones de LinkedIn y páginas de empresas que el buscador
+    tenga indexadas). Usa Bing en formato RSS; si no responde, DuckDuckGo en HTML."""
+    consulta = fuente["consulta"]
+    items = []
+    try:
+        url = ("https://www.bing.com/search?format=rss&count=30&setlang=es&cc=PE&q=" + quote_plus(consulta))
+        r = sesion.get(url, timeout=60)
+        if r.status_code == 200 and b"<rss" in r.content[:500]:
+            raiz = ET.fromstring(r.content)
+            for it in raiz.iter("item"):
+                titulo = (it.findtext("title") or "").strip()
+                enlace = (it.findtext("link") or "").strip()
+                fecha = None
+                if it.findtext("pubDate"):
+                    try:
+                        fecha = email.utils.parsedate_to_datetime(it.findtext("pubDate")).astimezone(LIMA_TZ)
+                    except (TypeError, ValueError):
+                        fecha = None
+                if titulo and enlace:
+                    items.append({"titulo": titulo, "url": enlace, "fecha": fecha, "medio": urlsplit(enlace).netloc,
+                                  "resumen": texto_plano(it.findtext("description") or "")[:300], "_fecha_web": True})
+    except Exception as e:  # noqa: BLE001
+        print(f"    Bing no respondió: {str(e)[:120]}")
+    if not items:
+        try:
+            r = sesion.get("https://html.duckduckgo.com/html/?kl=pe-es&q=" + quote_plus(consulta), timeout=60)
+            bloques = re.findall(r'class="result__a"[^>]*href="([^"]+)"[^>]*>(.*?)</a>.*?class="result__snippet"[^>]*>(.*?)</a>',
+                                 r.text, re.S)
+            for href, tit, snip in bloques:
+                m = re.search(r"uddg=([^&]+)", href)
+                enlace = requests_unquote(m.group(1)) if m else html.unescape(href)
+                items.append({"titulo": texto_plano(tit), "url": enlace, "fecha": None,
+                              "medio": urlsplit(enlace).netloc, "resumen": texto_plano(snip)[:300], "_fecha_web": True})
+        except Exception as e:  # noqa: BLE001
+            print(f"    DuckDuckGo no respondió: {str(e)[:120]}")
+    return items
+
+
+def requests_unquote(texto):
+    from urllib.parse import unquote
+    return unquote(texto)
+
+
+MEDIOS_PRENSA = ("andina", "elperuano", "gestion", "elcomercio", "larepublica", "rpp", "infobae", "proactivo",
+                 "energiminas", "rumbominero", "revistaeconomia", "correo", "peru21", "expreso", "semanaeconomica",
+                 "mineriaenergia", "minasypetroleo", "construccionindustria", "news.google")
+
+
+def procedencia_de(url, medio=""):
+    dominio = urlsplit(url or "").netloc.lower().replace("www.", "")
+    if not dominio:
+        return medio or "Desconocida"
+    if "linkedin.com" in dominio:
+        return "LinkedIn"
+    if "seace" in dominio or "oece.gob.pe" in dominio:
+        return "SEACE (OECE)"
+    if "investinperu" in dominio or "proinversion" in dominio:
+        return "ProInversión (portal oficial)"
+    if "petroperu" in dominio or "suplos" in dominio:
+        return "Portal de Petroperú"
+    if dominio.endswith("gob.pe"):
+        return "gob.pe (portal del Estado)"
+    if any(m in dominio for m in MEDIOS_PRENSA):
+        return f"Prensa: {dominio}" if "news.google" not in dominio else f"Prensa: {medio or 'Google Noticias'}"
+    if "facebook.com" in dominio:
+        return "Facebook"
+    return f"Web de la empresa: {dominio}"
+
+
 def leer_pagina(sesion, fuente):
     items, vistos = [], set()
     patron = re.compile(fuente.get("patron") or PATRON_GOBPE, re.I)
@@ -336,7 +406,17 @@ def _monto(texto):
     return None
 
 
+RE_SUBCONTRATO = re.compile(r"subcontrat|sub contrat|paquetes? de partidas|invitacion a cotizar|invitamos a cotizar|"
+                            r"solicitamos cotizacion|buscamos (empresas|contratistas|proveedores)|requerimos (empresas|contratistas)|"
+                            r"registro de (proveedores|contratistas|subcontratistas)|convocatoria (a|de) (proveedores|contratistas)|"
+                            r"proveedores locales|empresas comunales|desarrollo de proveedores")
+
+
 def clasificar(titulo_n, texto_n, es_nota):
+    if RE_SUBCONTRATO.search(titulo_n + " " + texto_n[:1500]) and not re.search(r"adjudic|buena pro", titulo_n):
+        return "Búsqueda de subcontratistas / proveedores"
+    if re.search(r"contratacion futura|aviso de contratacion", titulo_n + " " + texto_n[:800]):
+        return "Acercamiento al mercado"
     if re.search(r"acercamiento al mercado|consulta al mercado|interaccion con el mercado|difusion del requerimiento|contratacion futura", titulo_n + " " + texto_n[:1500]):
         return "Acercamiento al mercado"
     if re.search(r"buena pro|adjudicacion|adjudico|acta de evaluacion|resultado|ganador", titulo_n):
@@ -365,6 +445,7 @@ def enriquecer(sesion, aviso, normalizar, departamento_de, especialidades_rx, co
     url_real = resolver_google(sesion, aviso["url"])
     if url_real != aviso["url"]:
         aviso["url_original"] = url_real
+    aviso["procedencia"] = procedencia_de(url_real, aviso.get("medio"))
     detalle = leer_detalle(sesion, url_real) if not url_real.lower().endswith(".pdf") else ""
     titulo = aviso.get("titulo", "")
     texto = f"{titulo}. {aviso.get('resumen', '')} {detalle[:12000]}"
@@ -427,6 +508,17 @@ def volcar_diagnostico(sesion, urls, carpeta):
 # ----------------------------------------------------------------------------
 # Proceso principal de avisos
 # ----------------------------------------------------------------------------
+def sector_por_grupo(grupo):
+    g = (grupo or "").lower()
+    if "impuestos" in g:
+        return "Público con financiamiento privado (OxI)"
+    if "petroper" in g:
+        return "Empresa estatal"
+    if any(x in g for x in ("miner", "subcontrat", "privad", "constructora")):
+        return "Privado"
+    return "Público"
+
+
 RE_SLUG_GOBPE = re.compile(r"gob\.pe/institucion/([a-z0-9\-]+)/", re.I)
 
 
@@ -462,6 +554,8 @@ def revisar(config, almacen, estado, sesion, normalizar, departamento_de, ahora)
                 del almacen[k]  # ya se revisó por dentro y no es de obra
                 continue
             a["pendiente_contexto"] = True  # se verificará al abrir el detalle
+        a.setdefault("sector", sector_por_grupo(a.get("grupo", "")))
+        a.setdefault("procedencia", procedencia_de(a.get("url_original") or a.get("url"), a.get("medio")))
         if not a.get("departamento"):
             a["departamento"] = departamento_de(normalizar(f"{a.get('titulo', '')} {a.get('resumen', '')}"),
                                                 pistas_de(a.get("url"), a.get("titulo"), a.get("medio")))
@@ -489,6 +583,8 @@ def revisar(config, almacen, estado, sesion, normalizar, departamento_de, ahora)
         try:
             if fuente.get("tipo") == "rss":
                 items = leer_rss(sesion, fuente)
+            elif fuente.get("tipo") == "web":
+                items = leer_web(sesion, fuente)
             elif fuente.get("tipo") == "proinversion":
                 items = leer_proinversion(sesion, fuente)
             else:
@@ -511,6 +607,7 @@ def revisar(config, almacen, estado, sesion, normalizar, departamento_de, ahora)
                 fecha = it.get("fecha")
                 dep_txt = normalizar(completo.pop("departamento_txt"))
                 aviso = {"id": aid, "fuente": nombre, "grupo": fuente.get("grupo", "Obras por Impuestos"),
+                         "sector": "Público con financiamiento privado (OxI)", "procedencia": "ProInversión (portal oficial)",
                          "titulo": it["titulo"], "resumen": completo.get("intervencion", ""), "medio": "ProInversión",
                          "departamento": departamento_de(dep_txt, [dep_txt]) if dep_txt else None,
                          "fecha": (fecha or ahora).isoformat(timespec="minutes"), "fecha_real": fecha is not None,
@@ -556,7 +653,14 @@ def revisar(config, almacen, estado, sesion, normalizar, departamento_de, ahora)
                 "fecha_real": fecha is not None,
                 "visto": ahora.isoformat(timespec="minutes"),
                 "url": it["url"],
+                "sector": fuente.get("sector") or sector_por_grupo(fuente.get("grupo", "")),
+                "procedencia": procedencia_de(it["url"], it.get("medio")),
             }
+            if fuente.get("empresa"):
+                aviso["empresa"] = fuente["empresa"]
+            m_li = re.match(r"^(.{3,80}?) (?:en|on) LinkedIn", it["titulo"])
+            if m_li:
+                aviso["empresa"] = m_li.group(1).strip()
             almacen[aid] = aviso
             titulos_existentes.add(titulo_n[:120])
             agregados += 1
@@ -612,7 +716,7 @@ def _f(valor):
         return None
 
 
-COLORES_CLASE = {"Convocatoria / proceso de selección": "#15803d", "Documento de un proceso en curso": "#1d4ed8",
+COLORES_CLASE = {"Búsqueda de subcontratistas / proveedores": "#7c3aed", "Convocatoria / proceso de selección": "#15803d", "Documento de un proceso en curso": "#1d4ed8",
                  "Acercamiento al mercado": "#b45309", "Resultado / buena pro": "#b91c1c",
                  "Nota sobre una convocatoria": "#0f766e", "Nota de prensa": "#6b7280"}
 ORDEN_CLASE = list(COLORES_CLASE)
@@ -634,7 +738,8 @@ def html_correo(avisos):
         clase = a.get("clase") or "Aviso"
         color = COLORES_CLASE.get(clase, "#6b7280")
         nombre = a.get("obra") or a["titulo"]
-        datos = [x for x in (a.get("tipo"), ", ".join(a.get("especialidades") or []) or None, a.get("entidad"),
+        datos = [x for x in (a.get("sector"), a.get("procedencia"), a.get("tipo"), ", ".join(a.get("especialidades") or []) or None,
+                             a.get("empresa") or a.get("entidad"),
                              a.get("departamento") and "📍 " + a["departamento"],
                              a.get("monto") and f"💰 S/ {a['monto']:,.0f}", a.get("cui") and f"CUI {a['cui']}") if x]
         filas.append(f"""
@@ -646,5 +751,5 @@ def html_correo(avisos):
   <div style="color:#374151">{e(" · ".join(datos))}</div>
   <div style="font-size:12px;color:#6b7280">📅 {e(fecha_legible(a))}</div>
 </td></tr>""")
-    return ('<h3 style="color:#7c3aed">📣 Obras por Impuestos, ANIN, PEIP y entidades especiales</h3>'
+    return ('<h3 style="color:#7c3aed">📣 Avisos: OxI, ANIN, PEIP, Petroperú, mineras y subcontratos</h3>'
             '<table style="border-collapse:collapse;width:100%">' + "".join(filas) + "</table>")

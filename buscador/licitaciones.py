@@ -321,6 +321,8 @@ def convertir(release, especialidades_rx):
     return {
         "id": ocid,
         "fuente": "SEACE",
+        "sector": "Público",
+        "procedencia": "SEACE (OECE)",
         "tipo": tipo,
         "especialidades": especialidades_de(texto_n, especialidades_rx),
         "titulo": titulo.strip(),
