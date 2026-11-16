@@ -432,7 +432,15 @@ def completar_fechas(r, hoy):
         r["propuestas"] = iso(propuestas)
         r["cronograma_fuente"] = "estimado" if propuestas else None
     r["cierre"] = iso(propuestas)
-    titulos = normalizar(" ".join(d.get("titulo", "") for d in r.get("documentos") or []))
+    # Documentos publicados junto con la convocatoria son antecedentes (p. ej. el informe que declaró
+    # desierta la convocatoria anterior); solo cuentan para la etapa los publicados después
+    publicado = parse_fecha(r.get("publicado")) or conv
+    posteriores, antecedentes = [], []
+    for d in r.get("documentos") or []:
+        f = parse_fecha(d.get("fecha"))
+        (posteriores if f and publicado and f > publicado + dt.timedelta(hours=12) else antecedentes).append(d)
+    r["viene_de_desierto"] = any(re.search(r"desiert", normalizar(d.get("titulo"))) for d in antecedentes)
+    titulos = normalizar(" ".join(d.get("titulo", "") for d in posteriores))
     if r.get("estado") in ("Adjudicado", "Contratado", "Cerrado"):
         r["etapa"] = {"Cerrado": "Cerrado / cancelado"}.get(r["estado"], r["estado"])
     elif re.search(r"desiert", titulos):
@@ -792,6 +800,7 @@ def fila_html(reg):
     return f"""
 <tr><td style="padding:10px;border-bottom:1px solid #e5e7eb;font-family:Arial,sans-serif;font-size:14px">
   <div style="font-size:12px;color:#6b7280">{e(reg['tipo'])} · {e(especialidad)} · {e(reg['procedimiento'])}</div>
+  {'<div style="font-size:12px;color:#b45309">↺ Nueva convocatoria: la anterior quedó desierta</div>' if reg.get("viene_de_desierto") else ""}
   <div style="font-weight:bold;margin:3px 0"><a href="{e(reg['url'])}" style="color:#1d4ed8;text-decoration:none">{e(nombre[:300])}</a></div>
   <div>{e(reg['entidad'])}</div>
   <div style="color:#374151">📍 {e(lugar)} &nbsp;|&nbsp; 💰 <b>{e(fmt_monto(reg))}</b></div>

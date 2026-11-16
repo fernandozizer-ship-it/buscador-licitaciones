@@ -196,7 +196,8 @@ function tarjeta(r) {
   return `<article class="tarjeta">
     <div class="etiquetas"><span class="tag ${esc(tipoClase)}">${esc(r.tipo)}</span>${esp}
       ${r.procedimiento ? `<span class="tag">${esc(r.procedimiento)}</span>` : ""}
-      <span class="tag etapa-${etapa(r)[1]}">${esc(etapa(r)[0])}</span></div>
+      <span class="tag etapa-${etapa(r)[1]}">${esc(etapa(r)[0])}</span>
+      ${r.viene_de_desierto ? `<span class="tag" style="background:#fef3c7;color:#92400e" title="Esta es una nueva convocatoria; el procedimiento anterior se declaró desierto">↺ Anterior desierta</span>` : ""}</div>
     <div class="titulo"><a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.descripcion || r.titulo)}</a></div>
     <div class="meta"><span>🏛️ ${esc(r.entidad)}</span><span>📍 ${esc(lugar)}</span></div>
     <div class="meta"><span>💰 <b>${esc(soles(r))}</b></span><span>📅 Publicado: ${esc(fecha(r.publicado))}</span>${r.postores ? `<span>👥 ${esc(r.postores)} participantes registrados</span>` : ""}</div>
@@ -216,7 +217,7 @@ function mostrarMas() {
 }
 
 function descargarCSV() {
-  const cols = ["tipo","especialidades","descripcion","titulo","entidad","departamento","provincia","distrito","monto","moneda","procedimiento","publicado","consultas_fin","cierre","cronograma_fuente","buena_pro","etapa","bases_url","url"];
+  const cols = ["tipo","especialidades","descripcion","titulo","entidad","departamento","provincia","distrito","monto","moneda","procedimiento","publicado","consultas_fin","cierre","cronograma_fuente","buena_pro","etapa","bases_url","viene_de_desierto","url"];
   const celda = (v) => '"' + (Array.isArray(v) ? v.join("; ") : (v ?? "")).toString().replace(/"/g, '""') + '"';
   const filas = [cols.join(";")].concat(FILTRADOS.map(r => cols.map(c => celda(r[c])).join(";")));
   const blob = new Blob(["﻿" + filas.join("\n")], {type: "text/csv;charset=utf-8"});
