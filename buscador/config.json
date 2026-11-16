@@ -575,7 +575,8 @@
         "subcontratista",
         "subcontratistas"
       ],
-      "revisar_detalle": true
+      "revisar_detalle": true,
+      "requiere_contexto": false
     },
     {
       "nombre": "Mineras - proveedores y licitaciones",
@@ -627,7 +628,8 @@
         "subcontratista",
         "subcontratistas"
       ],
-      "revisar_detalle": true
+      "revisar_detalle": true,
+      "requiere_contexto": false
     },
     {
       "nombre": "ProActivo (prensa minera)",
@@ -679,7 +681,8 @@
         "subcontratista",
         "subcontratistas"
       ],
-      "revisar_detalle": true
+      "revisar_detalle": true,
+      "requiere_contexto": false
     },
     {
       "nombre": "Energiminas (prensa minera)",
@@ -731,7 +734,8 @@
         "subcontratista",
         "subcontratistas"
       ],
-      "revisar_detalle": true
+      "revisar_detalle": true,
+      "requiere_contexto": false
     },
     {
       "nombre": "Rumbo Minero (prensa minera)",
@@ -783,7 +787,8 @@
         "subcontratista",
         "subcontratistas"
       ],
-      "revisar_detalle": true
+      "revisar_detalle": true,
+      "requiere_contexto": false
     },
     {
       "nombre": "Subcontratos - noticias",
@@ -835,7 +840,8 @@
         "subcontratista",
         "subcontratistas"
       ],
-      "revisar_detalle": true
+      "revisar_detalle": true,
+      "requiere_contexto": false
     },
     {
       "nombre": "Subcontratos - LinkedIn (1)",
@@ -1220,5 +1226,13 @@
     "sesion ordinaria",
     "sesion extraordinaria"
   ],
-  "version_filtros": 3
+  "version_filtros": 4,
+  "depurar_fuentes": [
+    "Mineras - proveedores y licitaciones",
+    "ProActivo (prensa minera)",
+    "Energiminas (prensa minera)",
+    "Rumbo Minero (prensa minera)",
+    "Subcontratos - noticias",
+    "Petroperú - noticias"
+  ]
 }

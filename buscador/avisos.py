@@ -467,7 +467,7 @@ def enriquecer(sesion, aviso, normalizar, departamento_de, especialidades_rx, co
     texto = f"{titulo}. {aviso.get('resumen', '')} {detalle[:12000]}"
     texto_n = normalizar(texto)
     titulo_n = normalizar(titulo)
-    if detalle and contexto_rx and not coincide(normalizar(f"{titulo} {detalle[:8000]}"), contexto_rx):
+    if detalle and contexto_rx and not aviso.get("sin_contexto_ok") and not coincide(normalizar(f"{titulo} {detalle[:8000]}"), contexto_rx):
         aviso["descartar"] = "no es de obra"
     if detalle and excluir_rx and coincide(normalizar(f"{titulo} {detalle[:2000]}"), excluir_rx):
         aviso["descartar"] = "excluido"
@@ -608,6 +608,7 @@ def revisar(config, almacen, estado, sesion, normalizar, departamento_de, ahora)
             continue
         primera_vez = nombre not in fuentes_vistas
         claves_fuente = compilar(fuente["palabras_clave"], normalizar) if fuente.get("palabras_clave") else claves_rx
+        depurar = nombre in config.get("depurar_fuentes", [])
         try:
             if fuente.get("tipo") == "rss":
                 items = leer_rss(sesion, fuente)
@@ -651,9 +652,11 @@ def revisar(config, almacen, estado, sesion, normalizar, departamento_de, ahora)
                 continue
             texto_n = normalizar(f"{it['titulo']} {it.get('resumen', '')}")
             if coincide(texto_n, excluir_rx):
+                if nombre in config.get("depurar_fuentes", []):
+                    print(f"      · FUERA  (palabra excluida en título) | {it['titulo'][:90]}")
                 continue
             relevante = coincide(texto_n, claves_fuente)
-            con_contexto = tiene_contexto(texto_n)
+            con_contexto = tiene_contexto(texto_n) or fuente.get("requiere_contexto") is False
             detalle = ""
             if aid in rechazados:
                 continue
@@ -668,6 +671,9 @@ def revisar(config, almacen, estado, sesion, normalizar, departamento_de, ahora)
                 if coincide(normalizar(detalle[:2500]), excluir_detalle_rx):
                     relevante = False
                 time.sleep(0.5)
+            if depurar:
+                print(f"      · {'ENTRA ' if relevante and con_contexto else 'FUERA '} clave={relevante} obra={con_contexto} "
+                      f"detalle={len(detalle)}c | {it['titulo'][:90]}")
             if not (relevante and con_contexto):
                 if detalle:
                     rechazados.add(aid)  # ya se revisó por dentro: no volver a abrirlo
@@ -692,6 +698,8 @@ def revisar(config, almacen, estado, sesion, normalizar, departamento_de, ahora)
             }
             if fuente.get("empresa"):
                 aviso["empresa"] = fuente["empresa"]
+            if fuente.get("requiere_contexto") is False:
+                aviso["sin_contexto_ok"] = True
             m_li = re.match(r"^(.{3,80}?) (?:en|on) LinkedIn", it["titulo"])
             if m_li:
                 aviso["empresa"] = m_li.group(1).strip()
