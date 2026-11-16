@@ -77,6 +77,30 @@ def id_de(url):
     return "aviso-" + hashlib.sha1(url_canonica(url).encode("utf-8")).hexdigest()[:16]
 
 
+RE_LIMITE = re.compile(r"(?:presentacion|recepcion|entrega) de (?:las )?(?:propuestas|ofertas|expresion(?:es)? de interes|sobres)(.{0,140})")
+RE_DMA = re.compile(r"(\d{1,2})\s*[/.-]\s*(\d{1,2})\s*[/.-]\s*(20\d\d)")
+
+
+def fecha_limite_de(texto_n, desde=None):
+    """Fecha de presentación de propuestas / expresiones de interés mencionada en el texto."""
+    for m in RE_LIMITE.finditer(texto_n):
+        trozo = m.group(1)
+        candidatas = []
+        for d, mes, a in RE_DMA.findall(trozo):
+            try:
+                candidatas.append(dt.datetime(int(a), int(mes), int(d), 23, 59, tzinfo=LIMA_TZ))
+            except ValueError:
+                pass
+        f = fecha_es(trozo)
+        if f:
+            candidatas.append(f.replace(hour=23, minute=59))
+        if desde:
+            candidatas = [c for c in candidatas if desde - dt.timedelta(days=2) <= c <= desde + dt.timedelta(days=200)]
+        if candidatas:
+            return min(candidatas)
+    return None
+
+
 def fecha_es(texto):
     m = RE_FECHA_ES.search(texto.lower())
     if not m:
@@ -539,6 +563,9 @@ def enriquecer(sesion, aviso, normalizar, departamento_de, especialidades_rx, co
     aviso.pop("pendiente_contexto", None)
     es_nota = "/noticias/" in url_real or ("gob.pe" not in url_real and "investinperu" not in url_real)
     aviso["clase"] = clasificar(titulo_n, texto_n, es_nota)
+    limite = fecha_limite_de(texto_n, _f(aviso.get("fecha")))
+    if limite and aviso["clase"] not in ("Resultado / buena pro", "Nota de prensa"):
+        aviso["fecha_limite"] = limite.isoformat(timespec="minutes")
     m = RE_OBRA_COMILLAS.search(texto) or RE_OBRA_LIBRE.search(texto)
     if m:
         obra = re.sub(r"\s+", " ", m.group(1)).strip(" ,.;:-")
@@ -954,6 +981,7 @@ def html_correo(avisos):
   {f'<div style="font-size:12px;color:#6b7280">{e(a["titulo"][:200])}</div>' if a.get("obra") else ""}
   <div style="color:#374151">{e(" · ".join(datos))}</div>
   {f'<div style="font-size:13px"><a href="{e(a["url"])}" style="color:#0a66c2">🔗 Ver publicación en LinkedIn</a> · 👤 {e(a.get("publicado_por") or "")}{" · ✉️ " + e(a["contacto"]) if a.get("contacto") else ""}{" · 🔧 " + e(a["partidas"]) if a.get("partidas") else ""}</div>' if a.get("origen") == "linkedin" else ""}
+  {f'<div style="font-size:13px;color:#b45309"><b>⏰ Presentación de propuestas: {e(a["fecha_limite"][8:10] + "/" + a["fecha_limite"][5:7] + "/" + a["fecha_limite"][:4])}</b></div>' if a.get("fecha_limite") else ""}
   <div style="font-size:12px;color:#6b7280">📅 {e(fecha_legible(a))}{f' · <a href="{e(a["ficha_cui"])}" style="color:#1d4ed8">consultar CUI {e(a["cui"])} en el MEF</a>' if a.get("ficha_cui") else ""}</div>
 </td></tr>""")
     return ('<h3 style="color:#7c3aed">📣 Avisos: OxI, ANIN, PEIP, Petroperú, mineras y subcontratos</h3>'

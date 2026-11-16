@@ -9,10 +9,11 @@ on:
   schedule:
     - cron: "7 12 * * *"    # 7:07 a. m. hora Peru
     - cron: "7 23 * * *"    # 6:07 p. m. hora Peru
-  push:                     # cuando Claude guarda un barrido de LinkedIn, se actualiza al toque
+  push:                     # al guardar un barrido de LinkedIn o un cambio del buscador, corre al toque
     branches: [main]
     paths:
-      - "buscador/linkedin.json"
+      - "buscador/**"
+      - "docs/index.html"
   workflow_dispatch:
     inputs:
       diagnostico:

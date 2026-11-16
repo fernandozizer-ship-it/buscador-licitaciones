@@ -20,7 +20,10 @@ def rel(ocid, cat, titulo, desc, entidad, monto, cierre=MANANA, region=None, sta
         "tender": {"title": titulo, "description": desc, "mainProcurementCategory": cat,
                    "procurementMethodDetails": "Licitación Pública", "status": status,
                    "value": {"amount": monto, "currency": "PEN"},
-                   "tenderPeriod": {"endDate": cierre}, "datePublished": HOY.isoformat()},
+                   "tenderPeriod": {"startDate": HOY.isoformat(), "endDate": HOY.isoformat()},
+                   # el plazo real: propuestas ~6 días después del fin de consultas
+                   "enquiryPeriod": {"endDate": (L.dt.datetime.fromisoformat(cierre) - L.dt.timedelta(days=6)).isoformat()},
+                   "datePublished": HOY.isoformat()},
     }
 
 

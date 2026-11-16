@@ -313,6 +313,14 @@ def convertir(release, especialidades_rx):
     except (TypeError, ValueError):
         monto = None
     periodo = tender.get("tenderPeriod") or {}
+    consultas = tender.get("enquiryPeriod") or {}
+    documentos = [{"titulo": (d.get("title") or "").strip(), "tipo": d.get("documentType") or "",
+                   "fecha": iso(parse_fecha(d.get("datePublished"))), "url": d.get("url")}
+                  for d in (tender.get("documents") or []) if d.get("url")]
+    # Las bases integradas traen el cronograma actualizado (prórrogas incluidas)
+    bases = (next((d for d in documentos if "integrad" in normalizar(d["titulo"])), None)
+             or next((d for d in documentos if d["tipo"] == "biddingDocuments"
+                      or re.search(r"\bbases\b", normalizar(d["titulo"]))), None))
     ocid = release.get("ocid") or release.get("id")
     titulo = tender.get("title") or ""
     descripcion = tender.get("description") or ""
@@ -336,11 +344,146 @@ def convertir(release, especialidades_rx):
         "procedimiento": tender.get("procurementMethodDetails") or tender.get("procurementMethod") or "",
         "estado": estado_proceso(release, tender),
         "publicado": iso(parse_fecha(tender.get("datePublished")) or parse_fecha(release.get("date"))),
-        "cierre": iso(parse_fecha(periodo.get("endDate"))),
+        # En el SEACE v3 el "tenderPeriod" es solo el día de la convocatoria (no el cierre):
+        # el plazo real es la presentación de propuestas, que se completa con completar_fechas()
+        "convocatoria": iso(parse_fecha(periodo.get("startDate"))),
+        "consultas_inicio": iso(parse_fecha(consultas.get("startDate"))),
+        "consultas_fin": iso(parse_fecha(consultas.get("endDate"))),
+        "documentos": documentos[-12:],
+        "bases_url": bases["url"] if bases else None,
+        "vr_reservado": bool(tender.get("hasTenderInformationProtectedByLaw")) or not monto,
+        "postores": tender.get("numberOfTenderers"),
         "actualizado": iso(parse_fecha(release.get("date"))),
         "url": URL_PROCESO.format(ocid=ocid),
     }
 
+
+
+# ----------------------------------------------------------------------------
+# Fechas del procedimiento: consultas, presentación de propuestas, buena pro y etapa
+# ----------------------------------------------------------------------------
+RE_FECHA_DMA = r"(\d{1,2})\s*[/.-]\s*(\d{1,2})\s*[/.-]\s*(20\d\d)"
+RE_SIGUIENTE_ETAPA = re.compile(r"convocatoria|registro de participantes|formulacion de consultas|absolucion de consultas|"
+                                r"integracion de (?:las )?bases|presentacion de (?:ofertas|propuestas)|calificacion|"
+                                r"evaluacion|otorgamiento de la buena pro|consentimiento")
+RE_PROPUESTAS = re.compile(r"presentacion de (?:ofertas|propuestas)(?: \(?electronica\)?)?(.{0,200})")
+RE_BUENA_PRO = re.compile(r"otorgamiento de la buena pro(.{0,200})")
+RE_TERMINADO = re.compile(r"buena pro|otorgamiento|consentimiento|acta de adjudicacion|desiert|cancelaci|nulidad|contrato")
+
+
+def _fechas_en(trozo):
+    salida = []
+    for d, m, a in re.findall(RE_FECHA_DMA, trozo or ""):
+        try:
+            salida.append(dt.datetime(int(a), int(m), int(d), 23, 59, tzinfo=LIMA_TZ))
+        except ValueError:
+            pass
+    return salida
+
+
+def cronograma_de_texto(texto, convocatoria=None):
+    """Busca en el texto de las bases la fecha de presentación de propuestas y de la buena pro."""
+    t = normalizar(texto)
+    resultado = {}
+    for clave, rx in (("propuestas", RE_PROPUESTAS), ("buena_pro", RE_BUENA_PRO)):
+        for m in rx.finditer(t):
+            trozo = m.group(1)
+            corte = RE_SIGUIENTE_ETAPA.search(trozo)
+            fechas = _fechas_en(trozo[:corte.start()] if corte else trozo)
+            if convocatoria:
+                fechas = [f for f in fechas if convocatoria - dt.timedelta(days=1) <= f <= convocatoria + dt.timedelta(days=150)]
+            if fechas:
+                resultado[clave] = max(fechas)
+                break
+    if "propuestas" in resultado and "buena_pro" in resultado and resultado["buena_pro"] < resultado["propuestas"]:
+        del resultado["buena_pro"]
+    return resultado
+
+
+def completar_fechas(r, hoy):
+    """Fecha de presentación de propuestas (de las bases o estimada) y etapa actual del proceso."""
+    conv = parse_fecha(r.get("convocatoria")) or parse_fecha(r.get("publicado"))
+    fin_consultas = parse_fecha(r.get("consultas_fin"))
+    propuestas = parse_fecha(r.get("propuestas")) if r.get("cronograma_fuente") == "bases" else None
+    if propuestas is None:
+        # Estimado con los plazos habituales: propuestas ~6 días después del fin de consultas
+        if fin_consultas:
+            propuestas = fin_consultas + dt.timedelta(days=6)
+        elif conv:
+            propuestas = conv.replace(hour=23, minute=59) + dt.timedelta(days=11)
+        # Si hubo prórroga, la absolución o integración de bases se publicó después: propuestas ~5 días más tarde
+        for d in r.get("documentos") or []:
+            f = parse_fecha(d.get("fecha"))
+            if f and propuestas and re.search(r"absolucion|integrad|prorroga|postergacion", normalizar(d.get("titulo"))):
+                propuestas = max(propuestas, f.replace(hour=23, minute=59) + dt.timedelta(days=5))
+        r["propuestas"] = iso(propuestas)
+        r["cronograma_fuente"] = "estimado" if propuestas else None
+    r["cierre"] = iso(propuestas)
+    titulos = normalizar(" ".join(d.get("titulo", "") for d in r.get("documentos") or []))
+    if r.get("estado") in ("Adjudicado", "Contratado", "Cerrado"):
+        r["etapa"] = {"Cerrado": "Cerrado / cancelado"}.get(r["estado"], r["estado"])
+    elif re.search(r"desiert", titulos):
+        r["etapa"] = "Desierto"
+    elif RE_TERMINADO.search(titulos):
+        r["etapa"] = "Buena pro otorgada"
+    elif fin_consultas and hoy <= fin_consultas:
+        r["etapa"] = "Consultas abiertas"
+    elif propuestas and hoy <= propuestas:
+        r["etapa"] = "Por presentar propuestas"
+    elif propuestas:
+        r["etapa"] = "En evaluación"
+    else:
+        r["etapa"] = "Convocado"
+    return r
+
+
+def leer_cronogramas(registros, prioridad_ids, config, hoy):
+    """Abre las bases (PDF del SEACE) de los procesos vigentes y lee su cronograma."""
+    tope = int(config.get("max_bases_por_ejecucion", 30))
+    if tope <= 0:
+        return
+    try:
+        from pypdf import PdfReader
+    except ImportError:
+        print("Cronogramas: falta pypdf, se usan fechas estimadas")
+        return
+    import io
+    regiones = set(config.get("regiones_prioritarias", []))
+    candidatos = [r for r in registros.values() if r.get("bases_url") and not r.get("cronograma_revisado")
+                  and r.get("etapa") in ("Consultas abiertas", "Por presentar propuestas", "Convocado")]
+    candidatos.sort(key=lambda r: (r["id"] not in prioridad_ids, r.get("departamento") not in regiones,
+                                   r.get("tipo") != "Obra", (r.get("publicado") or "")), reverse=False)
+    sesion = nueva_sesion()
+    leidos = encontrados = 0
+    for r in candidatos[:tope]:
+        r["cronograma_revisado"] = True
+        try:
+            resp = sesion.get(r["bases_url"], timeout=120, stream=True)
+            datos = b""
+            for bloque in resp.iter_content(1 << 20):
+                datos += bloque
+                if len(datos) > 30_000_000:
+                    raise RuntimeError("PDF de más de 30 MB")
+            if resp.status_code != 200 or not datos.startswith(b"%PDF"):
+                raise RuntimeError(f"HTTP {resp.status_code}, no es PDF")
+            lector = PdfReader(io.BytesIO(datos))
+            texto = " ".join((p.extract_text() or "") for p in lector.pages[:25])
+            leidos += 1
+            crono = cronograma_de_texto(texto, parse_fecha(r.get("convocatoria")) or parse_fecha(r.get("publicado")))
+            if crono.get("propuestas"):
+                encontrados += 1
+                r["propuestas"] = iso(crono["propuestas"])
+                r["cronograma_fuente"] = "bases"
+                if crono.get("buena_pro"):
+                    r["buena_pro"] = iso(crono["buena_pro"])
+            print(f"  bases {r['titulo'][:28]}: {len(texto)} caracteres, "
+                  f"propuestas={'%s' % crono['propuestas'].date() if crono.get('propuestas') else 'no indicado'}")
+        except Exception as e:  # noqa: BLE001
+            print(f"  bases {r.get('titulo', '')[:28]}: no se pudo leer ({str(e)[:90]})")
+        completar_fechas(r, hoy)
+        time.sleep(0.5)
+    print(f"Cronogramas: {leidos} bases leídas, {encontrados} con fecha de propuestas "
+          f"({max(0, len(candidatos) - tope)} quedan para la próxima ejecución)")
 
 # ----------------------------------------------------------------------------
 # Descarga (archivos mensuales de datos abiertos del OECE)
@@ -553,7 +696,8 @@ def descargar(desde, diagnostico=False):
     """Descarga los archivos mensuales necesarios y devuelve los releases publicados desde 'desde'."""
     import tempfile
     sesion = nueva_sesion()
-    meses = meses_entre(desde, ahora())
+    # Siempre se releen los últimos ~2 meses: así se actualiza la etapa (buena pro, desierto) de lo ya guardado
+    meses = meses_entre(min(desde, ahora() - dt.timedelta(days=int(os.environ.get("DIAS_REFRESCO", "62")))), ahora())
     archivos = listar_archivos(sesion, meses, diagnostico)
     carpeta = tempfile.mkdtemp(prefix="oece_")
     releases, leidos = [], 0
@@ -571,14 +715,12 @@ def descargar(desde, diagnostico=False):
                 muestra = leer_json(RUTA_MUESTRA, {})
                 muestra.setdefault("ejemplos_de_procesos", []).append(rel)
                 guardar_json(RUTA_MUESTRA, muestra)
-            f = parse_fecha(tender.get("datePublished")) or parse_fecha(rel.get("date"))
-            if f is None or f >= desde:
-                releases.append(rel)
+            releases.append(rel)
         try:
             os.remove(destino)
         except OSError:
             pass
-    print(f"Procesos leídos: {leidos} | publicados desde {iso(desde)}: {len(releases)}")
+    print(f"Procesos leídos: {leidos} (meses {', '.join(f'{a}-{m:02d}' for a, m in meses)})")
     print("DIAGNÓSTICO — categorías:", dict(categorias.most_common(8)))
     return releases
 
@@ -589,7 +731,7 @@ def descargar(desde, diagnostico=False):
 def pasa_filtro_correo(reg, config, excluidas_rx):
     if reg["tipo"] not in config.get("tipos_para_correo", []):
         return False
-    if reg.get("estado") in ESTADOS_NO_VIGENTES:
+    if reg.get("estado") in ESTADOS_NO_VIGENTES or reg.get("etapa") in ("Buena pro otorgada", "Desierto", "En evaluación"):
         return False
     cierre = parse_fecha(reg.get("cierre"))
     if cierre and cierre < ahora():
@@ -612,8 +754,8 @@ def pasa_filtro_correo(reg, config, excluidas_rx):
 # Correo
 # ----------------------------------------------------------------------------
 def fmt_monto(reg):
-    if reg["monto"] is None:
-        return "Monto no indicado"
+    if not reg.get("monto"):
+        return "Valor referencial reservado / no publicado"
     simbolo = "S/" if reg.get("moneda") in (None, "", "PEN") else reg["moneda"]
     return f"{simbolo} {reg['monto']:,.0f}"
 
@@ -621,6 +763,11 @@ def fmt_monto(reg):
 def fmt_fecha(valor):
     f = parse_fecha(valor)
     return f.strftime("%d/%m/%Y %H:%M") if f else "—"
+
+
+def fmt_dia(valor):
+    f = parse_fecha(valor)
+    return f.astimezone(LIMA_TZ).strftime("%d/%m/%Y") if f else "—"
 
 
 def fila_html(reg):
@@ -633,7 +780,9 @@ def fila_html(reg):
   <div style="font-size:12px;color:#6b7280">{e(reg['tipo'])} · {e(especialidad)} · {e(reg['procedimiento'])}</div>
   <div style="font-weight:bold;margin:3px 0"><a href="{e(reg['url'])}" style="color:#1d4ed8;text-decoration:none">{e(nombre[:300])}</a></div>
   <div>{e(reg['entidad'])}</div>
-  <div style="color:#374151">📍 {e(lugar)} &nbsp;|&nbsp; 💰 <b>{e(fmt_monto(reg))}</b> &nbsp;|&nbsp; ⏰ Cierre: {e(fmt_fecha(reg.get('cierre')))}</div>
+  <div style="color:#374151">📍 {e(lugar)} &nbsp;|&nbsp; 💰 <b>{e(fmt_monto(reg))}</b></div>
+  <div style="color:#374151">📅 Publicado: {e(fmt_dia(reg.get('publicado')))} &nbsp;|&nbsp; ❓ Consultas hasta: {e(fmt_dia(reg.get('consultas_fin')))} &nbsp;|&nbsp; 📨 <b>Propuestas: {e(fmt_dia(reg.get('cierre')))}{" (según bases)" if reg.get("cronograma_fuente") == "bases" else " (aprox.)"}</b>{f" &nbsp;|&nbsp; 🏆 Buena pro: {e(fmt_dia(reg.get('buena_pro')))}" if reg.get("buena_pro") else ""}</div>
+  {f'<div style="font-size:12px"><a href="{e(reg["bases_url"])}">📄 Descargar bases</a></div>' if reg.get("bases_url") else ""}
   <div style="font-size:12px;color:#6b7280">{e(reg['titulo'])}</div>
 </td></tr>"""
 
@@ -810,15 +959,24 @@ def main():
             continue
         previo = registros.get(reg["id"])
         if previo:
-            # Actualizar con la versión más reciente, conservando cuándo lo vimos por primera vez
-            if (reg.get("actualizado") or "") >= (previo.get("actualizado") or ""):
+            # Actualizar con la versión más reciente, conservando cuándo lo vimos y lo leído de las bases
+            if (reg.get("actualizado") or "") >= (previo.get("actualizado") or "") or "consultas_fin" not in previo:
                 reg["visto"] = previo.get("visto")
-                registros[reg["id"]] = {k: (v if v not in (None, "", []) else previo.get(k)) for k, v in reg.items()}
+                if reg.get("bases_url") and reg["bases_url"] != previo.get("bases_url"):
+                    previo = {**previo, "cronograma_revisado": False}  # salieron bases nuevas (p. ej. integradas)
+                registros[reg["id"]] = {**previo, **{k: v for k, v in reg.items() if v not in (None, "", [])}}
+        elif (parse_fecha(reg.get("publicado")) or inicio) < desde - dt.timedelta(days=int(config.get("dias_carga_inicial_buscador", 45))):
+            continue  # muy antiguo para agregarlo ahora
         else:
             reg["visto"] = iso(inicio)
             registros[reg["id"]] = reg
             if (parse_fecha(reg.get("publicado")) or inicio) >= correo_desde:
                 nuevos.append(reg)
+
+    # Fechas reales del procedimiento (consultas, propuestas, buena pro) y etapa actual
+    for r in registros.values():
+        completar_fechas(r, inicio)
+    leer_cronogramas(registros, {r["id"] for r in nuevos}, config, inicio)
 
     # Historial: descartar lo muy antiguo
     limite = inicio - dt.timedelta(days=int(config.get("dias_historial", 365)))

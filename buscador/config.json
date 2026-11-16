@@ -1263,5 +1263,6 @@
     "Petroperú",
     "Subcontratos de constructoras",
     "Licitaciones privadas"
-  ]
+  ],
+  "max_bases_por_ejecucion": 30
 }
