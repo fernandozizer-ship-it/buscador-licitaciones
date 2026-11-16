@@ -636,12 +636,12 @@ def fila_html(reg):
 </td></tr>"""
 
 
-def armar_correo(prioritarias, resto, config, url_buscador):
+def armar_correo(prioritarias, resto, config, url_buscador, avisos_html="", n_avisos=0):
     max_resto = int(config.get("max_lineas_resto_del_pais", 40))
     regiones = ", ".join(config.get("regiones_prioritarias", []))
     partes = [f"""<html><head><meta charset="utf-8"></head><body><div style="font-family:Arial,sans-serif;max-width:720px">
 <h2 style="color:#111827;margin-bottom:4px">🏗️ Licitaciones nuevas — {ahora().strftime('%d/%m/%Y %H:%M')}</h2>
-<p style="color:#374151;margin-top:0">{len(prioritarias)} en tus regiones prioritarias ({html.escape(regiones)}) y {len(resto)} en el resto del país.
+<p style="color:#374151;margin-top:0">SEACE: {len(prioritarias)} en tus regiones prioritarias ({html.escape(regiones)}) y {len(resto)} en el resto del país.{f" Además, {n_avisos} avisos de Obras por Impuestos / ANIN / PEIP." if n_avisos else ""}
 <br><a href="{html.escape(url_buscador)}">Abrir el buscador completo</a></p>"""]
     if prioritarias:
         partes.append('<h3 style="color:#b91c1c">🔴 Regiones prioritarias</h3><table style="border-collapse:collapse;width:100%">')
@@ -653,8 +653,12 @@ def armar_correo(prioritarias, resto, config, url_buscador):
         partes.append("</table>")
         if len(resto) > max_resto:
             partes.append(f'<p>… y {len(resto) - max_resto} más en el <a href="{html.escape(url_buscador)}">buscador</a>.</p>')
+    if avisos_html:
+        partes.append(avisos_html)
     partes.append('<p style="font-size:12px;color:#6b7280">Fuente: SEACE vía datos abiertos del OECE. Verifica siempre plazos y requisitos en las bases oficiales.</p></div></body></html>')
     asunto = f"🏗️ Licitaciones nuevas: {len(prioritarias)} en tus regiones + {len(resto)} en el resto del país"
+    if n_avisos:
+        asunto += f" + {n_avisos} avisos OxI/ANIN/PEIP"
     return asunto, "".join(partes)
 
 
@@ -689,6 +693,30 @@ def enviar_correo(asunto, cuerpo_html):
         return True
     print("No hay credenciales de correo (Gmail o Brevo): no se envía correo.")
     return False
+
+
+def departamento_aviso(texto_n):
+    dep, prov, _ = ubicar({}, texto_n, "")
+    return dep
+
+
+def revisar_avisos(config, estado, inicio):
+    """Lee las fuentes de la Fase 2 sin poner en riesgo la Fase 1 si algo falla."""
+    if not config.get("fuentes_avisos"):
+        return [], ""
+    ruta = os.path.join(RAIZ, "docs", "avisos.json")
+    almacen = {a["id"]: a for a in leer_json(ruta, {"avisos": []}).get("avisos", [])}
+    try:
+        import avisos as AV
+        print("Avisos (Obras por Impuestos, ANIN, PEIP):")
+        nuevos, _ = AV.revisar(config, almacen, estado, nueva_sesion(), normalizar, departamento_aviso, inicio)
+        lista = sorted(almacen.values(), key=lambda a: a.get("fecha") or "", reverse=True)
+        guardar_json(ruta, {"actualizado": iso(inicio), "total": len(lista), "avisos": lista}, compacto=True)
+        print(f"Avisos nuevos para correo: {len(nuevos)} | total avisos en buscador: {len(lista)}")
+        return nuevos, AV.html_correo(nuevos)
+    except Exception as e:  # noqa: BLE001
+        print("AVISO: falló la revisión de avisos (la búsqueda del SEACE sigue normal):", e)
+        return [], ""
 
 
 def url_del_buscador():
@@ -775,8 +803,11 @@ def main():
     print(f"Procesos nuevos de obra/supervisión/consultoría: {len(nuevos)} | para correo: "
           f"{len(prioritarias)} prioritarias + {len(resto)} resto | total en buscador: {len(lista)}")
 
-    if prioritarias or resto:
-        asunto, cuerpo = armar_correo(prioritarias, resto, config, url_del_buscador())
+    # Fase 2: avisos de Obras por Impuestos, ANIN, PEIP y programas especiales
+    avisos_nuevos, avisos_html = revisar_avisos(config, estado, inicio)
+
+    if prioritarias or resto or avisos_nuevos:
+        asunto, cuerpo = armar_correo(prioritarias, resto, config, url_del_buscador(), avisos_html, len(avisos_nuevos))
         enviar_correo(asunto, cuerpo)
 
     estado.update({"ultima_ejecucion_ok": iso(inicio), "fallas_seguidas": 0,

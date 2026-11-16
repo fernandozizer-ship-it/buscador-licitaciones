@@ -1,39 +1,300 @@
 {
   "_ayuda": "Edita este archivo para cambiar qué te llega al correo. El buscador web siempre guarda TODO (obras, supervisión y consultoría de obra de todo el país); estos filtros solo deciden qué se envía por correo.",
-
-  "regiones_prioritarias": ["Ica", "Lima", "Callao", "Arequipa", "Moquegua"],
-
-  "tipos_para_correo": ["Obra", "Supervisión", "Consultoría de obra"],
-
+  "regiones_prioritarias": [
+    "Ica",
+    "Lima",
+    "Callao",
+    "Arequipa",
+    "Moquegua"
+  ],
+  "tipos_para_correo": [
+    "Obra",
+    "Supervisión",
+    "Consultoría de obra"
+  ],
   "montos_para_correo": {
-    "Obra":                {"minimo": 300000, "maximo": 10000000},
-    "Supervisión":         {"minimo": 30000,  "maximo": 3000000},
-    "Consultoría de obra": {"minimo": 30000,  "maximo": 3000000}
+    "Obra": {
+      "minimo": 300000,
+      "maximo": 10000000
+    },
+    "Supervisión": {
+      "minimo": 30000,
+      "maximo": 3000000
+    },
+    "Consultoría de obra": {
+      "minimo": 30000,
+      "maximo": 3000000
+    }
   },
-
   "incluir_sin_monto": true,
-
   "solo_estas_especialidades": [],
-
-  "palabras_excluidas": ["adquisicion de", "suministro de", "alquiler de", "mantenimiento de vehiculos", "seguro", "vigilancia", "limpieza de ambientes"],
-
+  "palabras_excluidas": [
+    "adquisicion de",
+    "suministro de",
+    "alquiler de",
+    "mantenimiento de vehiculos",
+    "seguro",
+    "vigilancia",
+    "limpieza de ambientes"
+  ],
   "max_lineas_resto_del_pais": 40,
-
   "dias_primera_carga": 3,
-
   "dias_historial": 365,
-
   "dias_carga_inicial_buscador": 45,
-
   "especialidades": {
-    "Pistas y veredas / vías urbanas": ["pistas", "veredas", "pavimentacion", "pavimento", "vias urbanas", "transitabilidad vehicular", "transitabilidad peatonal", "calles", "jiron", "avenida", "adoquin"],
-    "Carreteras, caminos y puentes": ["carretera", "camino vecinal", "trocha", "puente", "pontón", "ponton", "via departamental", "red vial", "infraestructura vial"],
-    "Agua y saneamiento": ["agua potable", "alcantarillado", "saneamiento", "desague", "ptar", "aguas residuales", "reservorio", "unidades basicas de saneamiento", "ubs"],
-    "Riego y defensa ribereña": ["riego", "canal", "defensa riberena", "drenaje", "represa", "bocatoma", "enrocado", "quebrada", "cauce"],
-    "Edificaciones - educación": ["institucion educativa", "i.e.", "colegio", "aulas", "servicio educativo", "educacion inicial", "educacion primaria", "educacion secundaria", "universidad", "instituto"],
-    "Edificaciones - salud": ["hospital", "centro de salud", "puesto de salud", "establecimiento de salud", "servicios de salud"],
-    "Otras edificaciones y espacios públicos": ["mercado", "local municipal", "comisaria", "estadio", "losa deportiva", "complejo deportivo", "coliseo", "parque", "plaza", "malecon", "edificio", "sede"],
-    "Electrificación": ["electrificacion", "electrico", "alumbrado", "redes primarias", "redes secundarias", "subestacion"],
-    "Movimiento de tierras y obras civiles": ["movimiento de tierras", "explanacion", "obras civiles", "muro de contencion", "relleno", "corte y relleno", "estabilizacion de taludes"]
-  }
+    "Pistas y veredas / vías urbanas": [
+      "pistas",
+      "veredas",
+      "pavimentacion",
+      "pavimento",
+      "vias urbanas",
+      "transitabilidad vehicular",
+      "transitabilidad peatonal",
+      "calles",
+      "jiron",
+      "avenida",
+      "adoquin"
+    ],
+    "Carreteras, caminos y puentes": [
+      "carretera",
+      "camino vecinal",
+      "trocha",
+      "puente",
+      "pontón",
+      "ponton",
+      "via departamental",
+      "red vial",
+      "infraestructura vial"
+    ],
+    "Agua y saneamiento": [
+      "agua potable",
+      "alcantarillado",
+      "saneamiento",
+      "desague",
+      "ptar",
+      "aguas residuales",
+      "reservorio",
+      "unidades basicas de saneamiento",
+      "ubs"
+    ],
+    "Riego y defensa ribereña": [
+      "riego",
+      "canal",
+      "defensa riberena",
+      "drenaje",
+      "represa",
+      "bocatoma",
+      "enrocado",
+      "quebrada",
+      "cauce"
+    ],
+    "Edificaciones - educación": [
+      "institucion educativa",
+      "i.e.",
+      "colegio",
+      "aulas",
+      "servicio educativo",
+      "educacion inicial",
+      "educacion primaria",
+      "educacion secundaria",
+      "universidad",
+      "instituto"
+    ],
+    "Edificaciones - salud": [
+      "hospital",
+      "centro de salud",
+      "puesto de salud",
+      "establecimiento de salud",
+      "servicios de salud"
+    ],
+    "Otras edificaciones y espacios públicos": [
+      "mercado",
+      "local municipal",
+      "comisaria",
+      "estadio",
+      "losa deportiva",
+      "complejo deportivo",
+      "coliseo",
+      "parque",
+      "plaza",
+      "malecon",
+      "edificio",
+      "sede"
+    ],
+    "Electrificación": [
+      "electrificacion",
+      "electrico",
+      "alumbrado",
+      "redes primarias",
+      "redes secundarias",
+      "subestacion"
+    ],
+    "Movimiento de tierras y obras civiles": [
+      "movimiento de tierras",
+      "explanacion",
+      "obras civiles",
+      "muro de contencion",
+      "relleno",
+      "corte y relleno",
+      "estabilizacion de taludes"
+    ]
+  },
+  "palabras_clave_avisos": [
+    "obras por impuestos",
+    "oxi",
+    "ley 29230",
+    "ley n 29230",
+    "proceso de seleccion",
+    "convocatoria",
+    "licitacion",
+    "concurso publico",
+    "acercamiento al mercado",
+    "consulta al mercado",
+    "interaccion con el mercado",
+    "difusion del requerimiento",
+    "contratacion futura",
+    "expresion de interes",
+    "expresiones de interes",
+    "gobierno a gobierno",
+    "g2g",
+    "contrato nec",
+    "contratos nec",
+    "contratos estandarizados",
+    "buena pro",
+    "ejecucion de obra",
+    "supervision de obra",
+    "empresa privada supervisora",
+    "entidad privada supervisora",
+    "empresa privada financista"
+  ],
+  "palabras_excluidas_avisos": [
+    "convocatoria cas",
+    "proceso cas",
+    "cas n",
+    "practicas preprofesionales",
+    "practicas profesionales",
+    "practicantes",
+    "convocatoria de personal",
+    "trabaja con nosotros",
+    "concurso de meritos",
+    "servicio civil",
+    "beca",
+    "becas",
+    "concurso escolar",
+    "concurso de dibujo",
+    "voluntariado",
+    "cargo de confianza"
+  ],
+  "dias_historial_avisos": 180,
+  "fuentes_avisos": [
+    {
+      "nombre": "OxI - noticias (todo el país)",
+      "grupo": "Obras por Impuestos",
+      "tipo": "rss",
+      "consulta": "\"obras por impuestos\" (convocatoria OR \"proceso de selección\" OR licitará OR convoca) when:14d"
+    },
+    {
+      "nombre": "OxI - gob.pe (todo el país)",
+      "grupo": "Obras por Impuestos",
+      "tipo": "rss",
+      "consulta": "site:gob.pe (\"obras por impuestos\" OR OXI) \"proceso de selección\" when:14d"
+    },
+    {
+      "nombre": "OxI - ProInversión (gob.pe)",
+      "grupo": "Obras por Impuestos",
+      "tipo": "pagina",
+      "revisar_detalle": true,
+      "urls": [
+        "https://www.gob.pe/institucion/proinversion/noticias",
+        "https://www.gob.pe/institucion/proinversion/informes-publicaciones"
+      ]
+    },
+    {
+      "nombre": "OxI - ProInversión (investinperu)",
+      "grupo": "Obras por Impuestos",
+      "tipo": "pagina",
+      "urls": [
+        "https://www.investinperu.pe/es/oxi"
+      ],
+      "patron": "investinperu\\.pe/.+"
+    },
+    {
+      "nombre": "ANIN - gob.pe",
+      "grupo": "ANIN",
+      "tipo": "pagina",
+      "revisar_detalle": true,
+      "urls": [
+        "https://www.gob.pe/institucion/anin/noticias",
+        "https://www.gob.pe/institucion/anin/informes-publicaciones"
+      ]
+    },
+    {
+      "nombre": "ANIN - noticias",
+      "grupo": "ANIN",
+      "tipo": "rss",
+      "consulta": "(ANIN OR \"Autoridad Nacional de Infraestructura\") (\"acercamiento al mercado\" OR convocatoria OR licitación OR contratación OR NEC) when:14d"
+    },
+    {
+      "nombre": "PEIP Escuelas Bicentenario",
+      "grupo": "PEIP y programas especiales",
+      "tipo": "pagina",
+      "revisar_detalle": true,
+      "urls": [
+        "https://www.gob.pe/institucion/escuelasbicentenario/noticias",
+        "https://www.gob.pe/institucion/escuelasbicentenario/informes-publicaciones"
+      ]
+    },
+    {
+      "nombre": "PEIP Legado",
+      "grupo": "PEIP y programas especiales",
+      "tipo": "pagina",
+      "revisar_detalle": true,
+      "urls": [
+        "https://www.gob.pe/institucion/proyectolegado/noticias"
+      ]
+    },
+    {
+      "nombre": "PRONIS (salud)",
+      "grupo": "PEIP y programas especiales",
+      "tipo": "pagina",
+      "revisar_detalle": true,
+      "urls": [
+        "https://www.gob.pe/institucion/pronis/noticias",
+        "https://www.gob.pe/institucion/pronis/informes-publicaciones"
+      ]
+    },
+    {
+      "nombre": "PRONIED (educación)",
+      "grupo": "PEIP y programas especiales",
+      "tipo": "pagina",
+      "revisar_detalle": true,
+      "urls": [
+        "https://www.gob.pe/institucion/pronied/noticias"
+      ]
+    },
+    {
+      "nombre": "Provías Nacional",
+      "grupo": "PEIP y programas especiales",
+      "tipo": "pagina",
+      "revisar_detalle": true,
+      "urls": [
+        "https://www.gob.pe/institucion/pvn/noticias"
+      ]
+    },
+    {
+      "nombre": "PNSU (saneamiento urbano)",
+      "grupo": "PEIP y programas especiales",
+      "tipo": "pagina",
+      "revisar_detalle": true,
+      "urls": [
+        "https://www.gob.pe/institucion/pnsu/noticias"
+      ]
+    },
+    {
+      "nombre": "PEIP y programas - noticias",
+      "grupo": "PEIP y programas especiales",
+      "tipo": "rss",
+      "consulta": "(\"Proyecto Especial de Inversión Pública\" OR PEIP OR \"Escuelas Bicentenario\" OR PRONIS OR \"gobierno a gobierno\") (convocatoria OR licitación OR \"acercamiento al mercado\" OR contratación) when:14d"
+    }
+  ]
 }
