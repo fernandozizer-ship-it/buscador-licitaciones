@@ -1,5 +1,5 @@
 {
-  "nota": "Convocatorias encontradas en LinkedIn en los barridos a pedido. Claude actualiza este archivo; el buscador lo agrega a la pestaña de avisos con procedencia LinkedIn.",
+  "nota": "Convocatorias encontradas en LinkedIn en los barridos a pedido. Claude actualiza este archivo directamente en el repo y el workflow corre solo; el buscador las agrega a la pestaña de avisos con procedencia LinkedIn.",
   "barrido": "2026-11-16T13:00-05:00",
   "convocatorias": [
     {
