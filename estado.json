@@ -1,1 +1,4 @@
-{}
+{
+  "fallas_seguidas": 1,
+  "ultimo_error": "2026-11-15T19:40-05:00 La API del OECE no respondió (HTTP 403) en https://contratacionesabiertas.oece.gob.pe/api/v1/releasesAfter?format=json&order=desc"
+}
