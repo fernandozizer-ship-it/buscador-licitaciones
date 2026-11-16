@@ -1,0 +1,1248 @@
+{
+  "version": "1.1",
+  "extensions": [
+    "https://devops11.oece.gob.pe/bitbucket/projects/PROYEC/repos/ocds_currencyname_extension/raw/extension.json",
+    "https://devops11.oece.gob.pe/bitbucket/projects/PROYEC/repos/ocds_department_extension/raw/extension.json",
+    "https://devops11.oece.gob.pe/bitbucket/projects/PROYEC/repos/ocds_datasegmentation_extension/raw/extension.json",
+    "https://bitbucket.org/ONCAETI/ocds_releasesource_extension/raw/c22448e1789f3e62631a93c1fee228e4ca9ef6e5/extension.json",
+    "https://raw.githubusercontent.com/open-contracting-extensions/ocds_exchangeRate_extension/master/extension.json",
+    "https://raw.githubusercontent.com/open-contracting-extensions/ocds_contract_completion_extension/master/extension.json",
+    "https://devops11.oece.gob.pe/bitbucket/projects/PROYEC/repos/ocds_datasegmentation_extension/raw/extension.json",
+    "https://devops11.oece.gob.pe/bitbucket/projects/PROYEC/repos/ocds_tenderinformation_extension/raw/extension.json",
+    "https://devops11.oece.gob.pe/bitbucket/projects/PROYEC/repos/ocds_itemstatus_extension/raw/extension.json",
+    "https://devops11.oece.gob.pe/bitbucket/projects/PROYEC/repos/ocds_releasepublisheddate_extension/raw/extension.json",
+    "https://devops11.oece.gob.pe/bitbucket/projects/PROYEC/repos/ocds_itemtotalvalue_extension/raw/extension.json",
+    "https://gitlab.com/dncp-opendata/ocds_statusdetails_extension/-/raw/master/extension.json",
+    "https://raw.githubusercontent.com/open-contracting-extensions/ocds_pagination_extension/master/extension.json"
+  ],
+  "publishedDate": "2026-11-15T23:57:03.690711-05:00",
+  "publisher": {
+    "name": "Organismo Supervisor de las Contrataciones del Estado"
+  },
+  "license": "https://creativecommons.org/licenses/by/4.0/",
+  "publicationPolicy": "https://contratacionesabiertas.oece.gob.pe/downloads/politica_publicacion.pdf",
+  "releases": [
+    {
+      "ocid": "ocds-dgv273-seacev3-999999",
+      "id": "ocds-dgv273-seacev3-999999-2024-04-14T08:29:51.507834-05:00",
+      "date": "2024-04-14T08:29:51.507819-05:00",
+      "publishedDate": "2024-04-14T08:29:51.507839-05:00",
+      "tag": [
+        "planning",
+        "tender",
+        "award",
+        "contract"
+      ],
+      "initiationType": "tender",
+      "buyer": {
+        "id": "PE-CONSUCODE-10249",
+        "name": "FUERZA AEREA DEL PERU"
+      },
+      "planning": {
+        "budget": {
+          "description": "Fondos Públicos",
+          "amount": {
+            "amount": 89950.0,
+            "currency": "PEN",
+            "currencyName": "Soles"
+          }
+        }
+      },
+      "tender": {
+        "id": "999999",
+        "title": "DIRECTA-PROC-4-2024-FAP/DIGED-1",
+        "description": "PROGRAMA DE ESPECIALIZACIÓN EN ADMINISTRACIÓN DIGED PP-0135",
+        "procuringEntity": {
+          "id": "PE-CONSUCODE-10249",
+          "name": "FUERZA AEREA DEL PERU"
+        },
+        "datePublished": "2024-03-27T14:15:00-05:00",
+        "procurementMethod": "direct",
+        "procurementMethodDetails": "Contratación Directa",
+        "mainProcurementCategory": "services",
+        "additionalProcurementCategories": [
+          "services"
+        ],
+        "value": {
+          "amount": 89950.0,
+          "currency": "PEN",
+          "currencyName": "Soles",
+          "amount_PEN": 89950.0
+        },
+        "tenderers": [
+          {
+            "id": "PE-RUC-20297868790",
+            "name": "UNIVERSIDAD SAN IGNACIO DE LOYOLA S.R.L."
+          }
+        ],
+        "numberOfTenderers": 1,
+        "items": [
+          {
+            "id": "20656559",
+            "position": "1",
+            "description": "PROGRAMA DE ESPECIALIZACIÓN EN ADMINISTRACIÓN DIGED PP-0135",
+            "statusDetails": "CONTRATADO",
+            "status": "complete",
+            "classification": {
+              "id": "8612170200326653",
+              "description": "ESPECIALIZACION EN ADMINISTRACION Y GESTION PUBLICA",
+              "scheme": "CUBSO"
+            },
+            "additionalClassifications": [
+              {
+                "id": "86121702",
+                "description": "Programas de postgrado",
+                "scheme": "UNSPSC"
+              }
+            ],
+            "quantity": 1.0,
+            "totalValue": {
+              "amount": 89950.0,
+              "currency": "PEN",
+              "currencyName": "Soles"
+            },
+            "unit": {
+              "id": "36",
+              "name": "Servicio",
+              "scheme": "PE-SEACE3-UnidadMedida"
+            }
+          }
+        ],
+        "documents": [
+          {
+            "id": "24831474985001827",
+            "url": "https://prod1.seace.gob.pe/SeaceWeb-PRO/SdescargarArchivoAlfresco?fileCode=d00c8166-e72a-4331-94db-c02cab35391e",
+            "datePublished": "2024-04-01T15:59:00-05:00",
+            "format": "zip",
+            "documentType": "biddingDocuments",
+            "title": "Documentos de Presentación de Propuestas",
+            "language": "es"
+          },
+          {
+            "id": "24831474985001828",
+            "url": "https://prod1.seace.gob.pe/SeaceWeb-PRO/SdescargarArchivoAlfresco?fileCode=96c1beb7-de2f-4c52-830e-ff5afcc0fe01",
+            "datePublished": "2024-04-01T15:59:00-05:00",
+            "format": "zip",
+            "documentType": "awardNotice",
+            "title": "Documentos de Otorgamiento de Buena Pro",
+            "language": "es"
+          },
+          {
+            "id": "24831474984999432",
+            "url": "https://prod1.seace.gob.pe/SeaceWeb-PRO/SdescargarArchivoAlfresco?fileCode=c2b5f4e5-7d73-4941-a137-f1d35b5cb5bd",
+            "datePublished": "2024-03-27T14:15:00-05:00",
+            "format": "pdf",
+            "documentType": "biddingDocuments",
+            "title": "Bases Administrativas",
+            "language": "es"
+          },
+          {
+            "id": "24831474984999433",
+            "url": "https://prod1.seace.gob.pe/SeaceWeb-PRO/SdescargarArchivoAlfresco?fileCode=a222a011-7dad-4782-974b-ad4ad2c48ad5",
+            "datePublished": "2024-03-27T14:15:00-05:00",
+            "format": "pdf",
+            "documentType": "biddingDocuments",
+            "title": "Resumen ejecutivo",
+            "language": "es"
+          }
+        ],
+        "hasTenderInformationProtectedByLaw": false
+      },
+      "awards": [
+        {
+          "id": "999999-20297868790",
+          "value": {
+            "amount": 89950.0,
+            "currency": "PEN",
+            "currencyName": "Soles"
+          },
+          "items": [
+            {
+              "id": "20656559",
+              "position": "1",
+              "description": "PROGRAMA DE ESPECIALIZACIÓN EN ADMINISTRACIÓN DIGED PP-0135",
+              "statusDetails": "CONTRATADO",
+              "status": "active",
+              "classification": {
+                "id": "8612170200326653",
+                "description": "ESPECIALIZACION EN ADMINISTRACION Y GESTION PUBLICA",
+                "scheme": "CUBSO"
+              },
+              "additionalClassifications": [
+                {
+                  "id": "86121702",
+                  "description": "Programas de postgrado",
+                  "scheme": "UNSPSC"
+                }
+              ],
+              "quantity": 1.0,
+              "totalValue": {
+                "amount": 89950.0,
+                "currency": "PEN",
+                "currencyName": "Soles"
+              },
+              "unit": {
+                "id": "36",
+                "name": "Servicio",
+                "scheme": "PE-SEACE3-UnidadMedida"
+              }
+            }
+          ],
+          "date": "2024-04-01T00:00:00-05:00",
+          "suppliers": [
+            {
+              "id": "PE-RUC-20297868790",
+              "name": "UNIVERSIDAD SAN IGNACIO DE LOYOLA S.R.L."
+            }
+          ]
+        }
+      ],
+      "contracts": [
+        {
+          "id": "2247298",
+          "awardID": "999999-20297868790",
+          "title": "CONTRAO N° 046-CS-DIGED-2024",
+          "description": "PROGRAMA DE ESPECIALIZACION EN ADMINISTRACION DIGED PP-0135",
+          "period": {
+            "startDate": "2024-04-08T00:00:00-05:00",
+            "endDate": "2024-12-13T00:00:00-05:00",
+            "durationInDays": 249
+          },
+          "value": {
+            "amount": 89950.0,
+            "currency": "PEN",
+            "currencyName": "Soles"
+          },
+          "dateSigned": "2024-04-05T00:00:00-05:00",
+          "items": [
+            {
+              "id": "20656559",
+              "position": "1",
+              "description": "PROGRAMA DE ESPECIALIZACIÓN EN ADMINISTRACIÓN DIGED PP-0135",
+              "statusDetails": "Contratado",
+              "status": "active",
+              "classification": {
+                "id": "8612170200326653",
+                "description": "ESPECIALIZACION EN ADMINISTRACION Y GESTION PUBLICA",
+                "scheme": "CUBSO"
+              },
+              "additionalClassifications": [
+                {
+                  "id": "86121702",
+                  "description": "Programas de postgrado",
+                  "scheme": "UNSPSC"
+                }
+              ],
+              "quantity": 1.0,
+              "totalValue": {
+                "amount": 89950.0,
+                "currency": "PEN",
+                "currencyName": "Soles"
+              },
+              "unit": {
+                "id": "36",
+                "name": "Servicio",
+                "scheme": "PE-SEACE3-UnidadMedida"
+              }
+            }
+          ],
+          "documents": [
+            {
+              "id": "152579289",
+              "documentType": "contractSigned",
+              "title": "Archivos del contrato",
+              "url": "https://prod4.seace.gob.pe:9000/api/con/documentos/descargar/152579289",
+              "datePublished": "2024-04-11T15:40:33-05:00",
+              "format": "application/pdf",
+              "language": "es"
+            }
+          ]
+        }
+      ],
+      "parties": [
+        {
+          "id": "PE-CONSUCODE-10249",
+          "name": "FUERZA AEREA DEL PERU",
+          "identifier": {
+            "id": "10249",
+            "scheme": "PE-CONSUCODE",
+            "legalName": "FUERZA AEREA DEL PERU"
+          },
+          "additionalIdentifiers": [
+            {
+              "id": "20144364059",
+              "scheme": "PE-RUC",
+              "legalName": "FUERZA AEREA DEL PERU"
+            }
+          ],
+          "address": {
+            "streetAddress": "CAMPO DE MARTE LIMA",
+            "locality": "JESUS MARIA",
+            "region": "LIMA",
+            "department": "LIMA",
+            "countryName": "PERU"
+          },
+          "contactPoint": {
+            "telephone": "000000"
+          },
+          "roles": [
+            "buyer",
+            "procuringEntity"
+          ]
+        },
+        {
+          "id": "PE-RUC-20297868790",
+          "name": "UNIVERSIDAD SAN IGNACIO DE LOYOLA S.R.L.",
+          "identifier": {
+            "scheme": "PE-RUC",
+            "id": "20297868790",
+            "legalName": "UNIVERSIDAD SAN IGNACIO DE LOYOLA S.R.L."
+          },
+          "address": {
+            "countryName": "PERU"
+          },
+          "contactPoint": {
+            "email": "correo.grupo.participantes@gmail.com"
+          },
+          "roles": [
+            "tenderer",
+            "supplier"
+          ]
+        }
+      ],
+      "sources": [
+        {
+          "id": "seace_v3",
+          "name": "Sistema Electrónico de Contrataciones del Estado - Versión 3",
+          "url": "https://prodapp2.seace.gob.pe/seacebus-uiwd-pub/buscadorPublico/buscadorPublico.xhtml"
+        }
+      ],
+      "dataSegmentation": {
+        "id": "2024-03",
+        "criteria": [
+          "añoPublicacionProceso",
+          "mesPublicacionProceso"
+        ]
+      }
+    },
+    {
+      "ocid": "ocds-dgv273-seacev3-999999",
+      "id": "ocds-dgv273-seacev3-999999-2024-04-12T08:28:34.114214-05:00",
+      "date": "2024-04-12T08:28:34.114201-05:00",
+      "publishedDate": "2024-04-12T08:28:34.114219-05:00",
+      "tag": [
+        "planning",
+        "tender",
+        "award",
+        "contract"
+      ],
+      "initiationType": "tender",
+      "buyer": {
+        "id": "PE-CONSUCODE-10249",
+        "name": "FUERZA AEREA DEL PERU"
+      },
+      "planning": {
+        "budget": {
+          "description": "Fondos Públicos",
+          "amount": {
+            "amount": 89950.0,
+            "currency": "PEN",
+            "currencyName": "Soles"
+          }
+        }
+      },
+      "tender": {
+        "id": "999999",
+        "title": "DIRECTA-PROC-4-2024-FAP/DIGED-1",
+        "description": "PROGRAMA DE ESPECIALIZACIÓN EN ADMINISTRACIÓN DIGED PP-0135",
+        "procuringEntity": {
+          "id": "PE-CONSUCODE-10249",
+          "name": "FUERZA AEREA DEL PERU"
+        },
+        "datePublished": "2024-03-27T14:15:00-05:00",
+        "procurementMethod": "direct",
+        "procurementMethodDetails": "Contratación Directa",
+        "mainProcurementCategory": "services",
+        "additionalProcurementCategories": [
+          "services"
+        ],
+        "value": {
+          "amount": 89950.0,
+          "currency": "PEN",
+          "currencyName": "Soles",
+          "amount_PEN": 89950.0
+        },
+        "tenderers": [
+          {
+            "id": "PE-RUC-20297868790",
+            "name": "UNIVERSIDAD SAN IGNACIO DE LOYOLA S.R.L."
+          }
+        ],
+        "numberOfTenderers": 1,
+        "items": [
+          {
+            "id": "20656559",
+            "position": "1",
+            "description": "PROGRAMA DE ESPECIALIZACIÓN EN ADMINISTRACIÓN DIGED PP-0135",
+            "statusDetails": "CONTRATADO",
+            "status": "complete",
+            "classification": {
+              "id": "8612170200326653",
+              "description": "ESPECIALIZACION EN ADMINISTRACION Y GESTION PUBLICA",
+              "scheme": "CUBSO"
+            },
+            "additionalClassifications": [
+              {
+                "id": "86121702",
+                "description": "Programas de postgrado",
+                "scheme": "UNSPSC"
+              }
+            ],
+            "quantity": 1.0,
+            "totalValue": {
+              "amount": 89950.0,
+              "currency": "PEN",
+              "currencyName": "Soles"
+            },
+            "unit": {
+              "id": "36",
+              "name": "Servicio",
+              "scheme": "PE-SEACE3-UnidadMedida"
+            }
+          }
+        ],
+        "documents": [
+          {
+            "id": "24831474985001827",
+            "url": "https://prod1.seace.gob.pe/SeaceWeb-PRO/SdescargarArchivoAlfresco?fileCode=d00c8166-e72a-4331-94db-c02cab35391e",
+            "datePublished": "2024-04-01T15:59:00-05:00",
+            "format": "zip",
+            "documentType": "biddingDocuments",
+            "title": "Documentos de Presentación de Propuestas",
+            "language": "es"
+          },
+          {
+            "id": "24831474985001828",
+            "url": "https://prod1.seace.gob.pe/SeaceWeb-PRO/SdescargarArchivoAlfresco?fileCode=96c1beb7-de2f-4c52-830e-ff5afcc0fe01",
+            "datePublished": "2024-04-01T15:59:00-05:00",
+            "format": "zip",
+            "documentType": "awardNotice",
+            "title": "Documentos de Otorgamiento de Buena Pro",
+            "language": "es"
+          },
+          {
+            "id": "24831474984999432",
+            "url": "https://prod1.seace.gob.pe/SeaceWeb-PRO/SdescargarArchivoAlfresco?fileCode=c2b5f4e5-7d73-4941-a137-f1d35b5cb5bd",
+            "datePublished": "2024-03-27T14:15:00-05:00",
+            "format": "pdf",
+            "documentType": "biddingDocuments",
+            "title": "Bases Administrativas",
+            "language": "es"
+          },
+          {
+            "id": "24831474984999433",
+            "url": "https://prod1.seace.gob.pe/SeaceWeb-PRO/SdescargarArchivoAlfresco?fileCode=a222a011-7dad-4782-974b-ad4ad2c48ad5",
+            "datePublished": "2024-03-27T14:15:00-05:00",
+            "format": "pdf",
+            "documentType": "biddingDocuments",
+            "title": "Resumen ejecutivo",
+            "language": "es"
+          }
+        ],
+        "hasTenderInformationProtectedByLaw": false
+      },
+      "awards": [
+        {
+          "id": "999999-20297868790",
+          "value": {
+            "amount": 89950.0,
+            "currency": "PEN",
+            "currencyName": "Soles"
+          },
+          "items": [
+            {
+              "id": "20656559",
+              "position": "1",
+              "description": "PROGRAMA DE ESPECIALIZACIÓN EN ADMINISTRACIÓN DIGED PP-0135",
+              "statusDetails": "CONTRATADO",
+              "status": "active",
+              "classification": {
+                "id": "8612170200326653",
+                "description": "ESPECIALIZACION EN ADMINISTRACION Y GESTION PUBLICA",
+                "scheme": "CUBSO"
+              },
+              "additionalClassifications": [
+                {
+                  "id": "86121702",
+                  "description": "Programas de postgrado",
+                  "scheme": "UNSPSC"
+                }
+              ],
+              "quantity": 1.0,
+              "totalValue": {
+                "amount": 89950.0,
+                "currency": "PEN",
+                "currencyName": "Soles"
+              },
+              "unit": {
+                "id": "36",
+                "name": "Servicio",
+                "scheme": "PE-SEACE3-UnidadMedida"
+              }
+            }
+          ],
+          "date": "2024-04-01T00:00:00-05:00",
+          "suppliers": [
+            {
+              "id": "PE-RUC-20297868790",
+              "name": "UNIVERSIDAD SAN IGNACIO DE LOYOLA S.R.L."
+            }
+          ]
+        }
+      ],
+      "contracts": [
+        {
+          "id": "2247298",
+          "awardID": "999999-20297868790",
+          "title": "CONTRAO N° 046-CS-DIGED-2024",
+          "description": "PROGRAMA DE ESPECIALIZACION EN ADMINISTRACION DIGED PP-0135",
+          "period": {
+            "startDate": "2024-04-08T00:00:00-05:00",
+            "endDate": "2024-12-13T00:00:00-05:00",
+            "durationInDays": 249
+          },
+          "value": {
+            "amount": 89950.0,
+            "currency": "PEN",
+            "currencyName": "Soles"
+          },
+          "dateSigned": "2024-04-05T00:00:00-05:00",
+          "items": [
+            {
+              "id": "20656559",
+              "position": "1",
+              "description": "PROGRAMA DE ESPECIALIZACIÓN EN ADMINISTRACIÓN DIGED PP-0135",
+              "statusDetails": "Contratado",
+              "status": "active",
+              "classification": {
+                "id": "8612170200326653",
+                "description": "ESPECIALIZACION EN ADMINISTRACION Y GESTION PUBLICA",
+                "scheme": "CUBSO"
+              },
+              "additionalClassifications": [
+                {
+                  "id": "86121702",
+                  "description": "Programas de postgrado",
+                  "scheme": "UNSPSC"
+                }
+              ],
+              "quantity": 1.0,
+              "totalValue": {
+                "amount": 89950.0,
+                "currency": "PEN",
+                "currencyName": "Soles"
+              },
+              "unit": {
+                "id": "36",
+                "name": "Servicio",
+                "scheme": "PE-SEACE3-UnidadMedida"
+              }
+            }
+          ],
+          "documents": [
+            {
+              "id": "152579289",
+              "documentType": "contractSigned",
+              "title": "Archivos del contrato",
+              "url": "https://prod4.seace.gob.pe:9000/api/con/documentos/descargar/152579289",
+              "datePublished": "2024-04-11T15:40:33-05:00",
+              "format": "application/pdf",
+              "language": "es"
+            }
+          ]
+        }
+      ],
+      "parties": [
+        {
+          "id": "PE-CONSUCODE-10249",
+          "name": "FUERZA AEREA DEL PERU",
+          "identifier": {
+            "id": "10249",
+            "scheme": "PE-CONSUCODE",
+            "legalName": "FUERZA AEREA DEL PERU"
+          },
+          "additionalIdentifiers": [
+            {
+              "id": "20144364059",
+              "scheme": "PE-RUC",
+              "legalName": "FUERZA AEREA DEL PERU"
+            }
+          ],
+          "address": {
+            "streetAddress": "CAMPO DE MARTE LIMA",
+            "locality": "JESUS MARIA",
+            "region": "LIMA",
+            "department": "LIMA",
+            "countryName": "PERU"
+          },
+          "contactPoint": {
+            "telephone": "000000"
+          },
+          "roles": [
+            "buyer",
+            "procuringEntity"
+          ]
+        },
+        {
+          "id": "PE-RUC-20297868790",
+          "name": "UNIVERSIDAD SAN IGNACIO DE LOYOLA S.R.L.",
+          "identifier": {
+            "scheme": "PE-RUC",
+            "id": "20297868790",
+            "legalName": "UNIVERSIDAD SAN IGNACIO DE LOYOLA S.R.L."
+          },
+          "address": {
+            "countryName": "PERU"
+          },
+          "contactPoint": {
+            "email": "correo.grupo.participantes@gmail.com"
+          },
+          "roles": [
+            "tenderer",
+            "supplier"
+          ]
+        }
+      ],
+      "sources": [
+        {
+          "id": "seace_v3",
+          "name": "Sistema Electrónico de Contrataciones del Estado - Versión 3",
+          "url": "https://prodapp2.seace.gob.pe/seacebus-uiwd-pub/buscadorPublico/buscadorPublico.xhtml"
+        }
+      ],
+      "dataSegmentation": {
+        "id": "2024-03",
+        "criteria": [
+          "añoPublicacionProceso",
+          "mesPublicacionProceso"
+        ]
+      }
+    },
+    {
+      "ocid": "ocds-dgv273-seacev3-999999",
+      "id": "ocds-dgv273-seacev3-999999-2024-04-03T08:24:01.297429-05:00",
+      "date": "2024-04-03T08:24:01.297416-05:00",
+      "publishedDate": "2024-04-03T08:24:01.297434-05:00",
+      "tag": [
+        "planning",
+        "tender",
+        "award"
+      ],
+      "initiationType": "tender",
+      "buyer": {
+        "id": "PE-CONSUCODE-10249",
+        "name": "FUERZA AEREA DEL PERU"
+      },
+      "planning": {
+        "budget": {
+          "description": "Fondos Públicos"
+        }
+      },
+      "tender": {
+        "id": "999999",
+        "title": "DIRECTA-PROC-4-2024-FAP/DIGED-1",
+        "description": "PROGRAMA DE ESPECIALIZACIÓN EN ADMINISTRACIÓN DIGED PP-0135",
+        "procuringEntity": {
+          "id": "PE-CONSUCODE-10249",
+          "name": "FUERZA AEREA DEL PERU"
+        },
+        "datePublished": "2024-03-27T14:15:00-05:00",
+        "procurementMethod": "direct",
+        "procurementMethodDetails": "Contratación Directa",
+        "mainProcurementCategory": "services",
+        "additionalProcurementCategories": [
+          "services"
+        ],
+        "value": {
+          "amount": 89950.0,
+          "currency": "PEN",
+          "currencyName": "Soles",
+          "amount_PEN": 89950.0
+        },
+        "tenderers": [
+          {
+            "id": "PE-RUC-20297868790",
+            "name": "UNIVERSIDAD SAN IGNACIO DE LOYOLA S.R.L."
+          }
+        ],
+        "numberOfTenderers": 1,
+        "items": [
+          {
+            "id": "20656559",
+            "position": "1",
+            "description": "PROGRAMA DE ESPECIALIZACIÓN EN ADMINISTRACIÓN DIGED PP-0135",
+            "statusDetails": "ADJUDICADO",
+            "status": "complete",
+            "classification": {
+              "id": "8612170200326653",
+              "description": "ESPECIALIZACION EN ADMINISTRACION Y GESTION PUBLICA",
+              "scheme": "CUBSO"
+            },
+            "additionalClassifications": [
+              {
+                "id": "86121702",
+                "description": "Programas de postgrado",
+                "scheme": "UNSPSC"
+              }
+            ],
+            "quantity": 1.0,
+            "totalValue": {
+              "amount": 89950.0,
+              "currency": "PEN",
+              "currencyName": "Soles"
+            },
+            "unit": {
+              "id": "36",
+              "name": "Servicio",
+              "scheme": "PE-SEACE3-UnidadMedida"
+            }
+          }
+        ],
+        "documents": [
+          {
+            "id": "24831474985001827",
+            "url": "https://prod1.seace.gob.pe/SeaceWeb-PRO/SdescargarArchivoAlfresco?fileCode=d00c8166-e72a-4331-94db-c02cab35391e",
+            "datePublished": "2024-04-01T15:59:00-05:00",
+            "format": "zip",
+            "documentType": "biddingDocuments",
+            "title": "Documentos de Presentación de Propuestas",
+            "language": "es"
+          },
+          {
+            "id": "24831474985001828",
+            "url": "https://prod1.seace.gob.pe/SeaceWeb-PRO/SdescargarArchivoAlfresco?fileCode=96c1beb7-de2f-4c52-830e-ff5afcc0fe01",
+            "datePublished": "2024-04-01T15:59:00-05:00",
+            "format": "zip",
+            "documentType": "awardNotice",
+            "title": "Documentos de Otorgamiento de Buena Pro",
+            "language": "es"
+          },
+          {
+            "id": "24831474984999432",
+            "url": "https://prod1.seace.gob.pe/SeaceWeb-PRO/SdescargarArchivoAlfresco?fileCode=c2b5f4e5-7d73-4941-a137-f1d35b5cb5bd",
+            "datePublished": "2024-03-27T14:15:00-05:00",
+            "format": "pdf",
+            "documentType": "biddingDocuments",
+            "title": "Bases Administrativas",
+            "language": "es"
+          },
+          {
+            "id": "24831474984999433",
+            "url": "https://prod1.seace.gob.pe/SeaceWeb-PRO/SdescargarArchivoAlfresco?fileCode=a222a011-7dad-4782-974b-ad4ad2c48ad5",
+            "datePublished": "2024-03-27T14:15:00-05:00",
+            "format": "pdf",
+            "documentType": "biddingDocuments",
+            "title": "Resumen ejecutivo",
+            "language": "es"
+          }
+        ],
+        "hasTenderInformationProtectedByLaw": false
+      },
+      "awards": [
+        {
+          "id": "999999-20297868790",
+          "value": {
+            "amount": 89950.0,
+            "currency": "PEN",
+            "currencyName": "Soles"
+          },
+          "items": [
+            {
+              "id": "20656559",
+              "position": "1",
+              "description": "PROGRAMA DE ESPECIALIZACIÓN EN ADMINISTRACIÓN DIGED PP-0135",
+              "statusDetails": "ADJUDICADO",
+              "status": "pending",
+              "classification": {
+                "id": "8612170200326653",
+                "description": "ESPECIALIZACION EN ADMINISTRACION Y GESTION PUBLICA",
+                "scheme": "CUBSO"
+              },
+              "additionalClassifications": [
+                {
+                  "id": "86121702",
+                  "description": "Programas de postgrado",
+                  "scheme": "UNSPSC"
+                }
+              ],
+              "quantity": 1.0,
+              "totalValue": {
+                "amount": 89950.0,
+                "currency": "PEN",
+                "currencyName": "Soles"
+              },
+              "unit": {
+                "id": "36",
+                "name": "Servicio",
+                "scheme": "PE-SEACE3-UnidadMedida"
+              }
+            }
+          ],
+          "date": "2024-04-01T00:00:00-05:00",
+          "suppliers": [
+            {
+              "id": "PE-RUC-20297868790",
+              "name": "UNIVERSIDAD SAN IGNACIO DE LOYOLA S.R.L."
+            }
+          ]
+        }
+      ],
+      "parties": [
+        {
+          "id": "PE-CONSUCODE-10249",
+          "name": "FUERZA AEREA DEL PERU",
+          "identifier": {
+            "id": "10249",
+            "scheme": "PE-CONSUCODE",
+            "legalName": "FUERZA AEREA DEL PERU"
+          },
+          "additionalIdentifiers": [
+            {
+              "id": "20144364059",
+              "scheme": "PE-RUC",
+              "legalName": "FUERZA AEREA DEL PERU"
+            }
+          ],
+          "address": {
+            "streetAddress": "CAMPO DE MARTE LIMA",
+            "locality": "JESUS MARIA",
+            "region": "LIMA",
+            "department": "LIMA",
+            "countryName": "PERU"
+          },
+          "contactPoint": {
+            "telephone": "000000"
+          },
+          "roles": [
+            "buyer",
+            "procuringEntity"
+          ]
+        },
+        {
+          "id": "PE-RUC-20297868790",
+          "name": "UNIVERSIDAD SAN IGNACIO DE LOYOLA S.R.L.",
+          "identifier": {
+            "scheme": "PE-RUC",
+            "id": "20297868790",
+            "legalName": "UNIVERSIDAD SAN IGNACIO DE LOYOLA S.R.L."
+          },
+          "address": {
+            "countryName": "PERU"
+          },
+          "contactPoint": {
+            "email": "correo.grupo.participantes@gmail.com"
+          },
+          "roles": [
+            "tenderer",
+            "supplier"
+          ]
+        }
+      ],
+      "sources": [
+        {
+          "id": "seace_v3",
+          "name": "Sistema Electrónico de Contrataciones del Estado - Versión 3",
+          "url": "https://prodapp2.seace.gob.pe/seacebus-uiwd-pub/buscadorPublico/buscadorPublico.xhtml"
+        }
+      ],
+      "dataSegmentation": {
+        "id": "2024-03",
+        "criteria": [
+          "añoPublicacionProceso",
+          "mesPublicacionProceso"
+        ]
+      }
+    },
+    {
+      "ocid": "ocds-dgv273-seacev3-999999",
+      "id": "ocds-dgv273-seacev3-999999-2024-04-02T08:17:53.848715-05:00",
+      "date": "2024-04-02T08:17:53.848701-05:00",
+      "publishedDate": "2024-04-02T08:17:53.848721-05:00",
+      "tag": [
+        "planning",
+        "tender",
+        "award"
+      ],
+      "initiationType": "tender",
+      "buyer": {
+        "id": "PE-CONSUCODE-10249",
+        "name": "FUERZA AEREA DEL PERU"
+      },
+      "planning": {
+        "budget": {
+          "description": "Fondos Públicos"
+        }
+      },
+      "tender": {
+        "id": "999999",
+        "title": "DIRECTA-PROC-4-2024-FAP/DIGED-1",
+        "description": "PROGRAMA DE ESPECIALIZACIÓN EN ADMINISTRACIÓN DIGED PP-0135",
+        "procuringEntity": {
+          "id": "PE-CONSUCODE-10249",
+          "name": "FUERZA AEREA DEL PERU"
+        },
+        "datePublished": "2024-03-27T14:15:00-05:00",
+        "procurementMethod": "direct",
+        "procurementMethodDetails": "Contratación Directa",
+        "mainProcurementCategory": "services",
+        "additionalProcurementCategories": [
+          "services"
+        ],
+        "value": {
+          "amount": 89950.0,
+          "currency": "PEN",
+          "currencyName": "Soles",
+          "amount_PEN": 89950.0
+        },
+        "tenderers": [
+          {
+            "id": "PE-RUC-20297868790",
+            "name": "UNIVERSIDAD SAN IGNACIO DE LOYOLA S.R.L."
+          }
+        ],
+        "numberOfTenderers": 1,
+        "items": [
+          {
+            "id": "20656559",
+            "position": "1",
+            "description": "PROGRAMA DE ESPECIALIZACIÓN EN ADMINISTRACIÓN DIGED PP-0135",
+            "statusDetails": "ADJUDICADO",
+            "status": "complete",
+            "classification": {
+              "id": "8612170200326653",
+              "description": "ESPECIALIZACION EN ADMINISTRACION Y GESTION PUBLICA",
+              "scheme": "CUBSO"
+            },
+            "additionalClassifications": [
+              {
+                "id": "86121702",
+                "description": "Programas de postgrado",
+                "scheme": "UNSPSC"
+              }
+            ],
+            "quantity": 1.0,
+            "totalValue": {
+              "amount": 89950.0,
+              "currency": "PEN",
+              "currencyName": "Soles"
+            },
+            "unit": {
+              "id": "36",
+              "name": "Servicio",
+              "scheme": "PE-SEACE3-UnidadMedida"
+            }
+          }
+        ],
+        "documents": [
+          {
+            "id": "24831474984999433",
+            "url": "https://prod1.seace.gob.pe/SeaceWeb-PRO/SdescargarArchivoAlfresco?fileCode=a222a011-7dad-4782-974b-ad4ad2c48ad5",
+            "datePublished": "2024-03-27T14:15:00-05:00",
+            "format": "pdf",
+            "documentType": "biddingDocuments",
+            "title": "Resumen ejecutivo",
+            "language": "es"
+          },
+          {
+            "id": "24831474984999432",
+            "url": "https://prod1.seace.gob.pe/SeaceWeb-PRO/SdescargarArchivoAlfresco?fileCode=c2b5f4e5-7d73-4941-a137-f1d35b5cb5bd",
+            "datePublished": "2024-03-27T14:15:00-05:00",
+            "format": "pdf",
+            "documentType": "biddingDocuments",
+            "title": "Bases Administrativas",
+            "language": "es"
+          },
+          {
+            "id": "24831474985001827",
+            "url": "https://prod1.seace.gob.pe/SeaceWeb-PRO/SdescargarArchivoAlfresco?fileCode=d00c8166-e72a-4331-94db-c02cab35391e",
+            "datePublished": "2024-04-01T15:59:00-05:00",
+            "format": "zip",
+            "documentType": "biddingDocuments",
+            "title": "Documentos de Presentación de Propuestas",
+            "language": "es"
+          },
+          {
+            "id": "24831474985001828",
+            "url": "https://prod1.seace.gob.pe/SeaceWeb-PRO/SdescargarArchivoAlfresco?fileCode=96c1beb7-de2f-4c52-830e-ff5afcc0fe01",
+            "datePublished": "2024-04-01T15:59:00-05:00",
+            "format": "zip",
+            "documentType": "awardNotice",
+            "title": "Documentos de Otorgamiento de Buena Pro",
+            "language": "es"
+          }
+        ],
+        "hasTenderInformationProtectedByLaw": false
+      },
+      "awards": [
+        {
+          "id": "999999-20297868790",
+          "value": {
+            "amount": 89950.0,
+            "currency": "PEN",
+            "currencyName": "Soles"
+          },
+          "items": [
+            {
+              "id": "20656559",
+              "position": "1",
+              "description": "PROGRAMA DE ESPECIALIZACIÓN EN ADMINISTRACIÓN DIGED PP-0135",
+              "statusDetails": "ADJUDICADO",
+              "status": "pending",
+              "classification": {
+                "id": "8612170200326653",
+                "description": "ESPECIALIZACION EN ADMINISTRACION Y GESTION PUBLICA",
+                "scheme": "CUBSO"
+              },
+              "additionalClassifications": [
+                {
+                  "id": "86121702",
+                  "description": "Programas de postgrado",
+                  "scheme": "UNSPSC"
+                }
+              ],
+              "quantity": 1.0,
+              "totalValue": {
+                "amount": 89950.0,
+                "currency": "PEN",
+                "currencyName": "Soles"
+              },
+              "unit": {
+                "id": "36",
+                "name": "Servicio",
+                "scheme": "PE-SEACE3-UnidadMedida"
+              }
+            }
+          ],
+          "date": "2024-04-01T00:00:00-05:00",
+          "suppliers": [
+            {
+              "id": "PE-RUC-20297868790",
+              "name": "UNIVERSIDAD SAN IGNACIO DE LOYOLA S.R.L."
+            }
+          ]
+        }
+      ],
+      "parties": [
+        {
+          "id": "PE-CONSUCODE-10249",
+          "name": "FUERZA AEREA DEL PERU",
+          "identifier": {
+            "id": "10249",
+            "scheme": "PE-CONSUCODE",
+            "legalName": "FUERZA AEREA DEL PERU"
+          },
+          "additionalIdentifiers": [
+            {
+              "id": "20144364059",
+              "scheme": "PE-RUC",
+              "legalName": "FUERZA AEREA DEL PERU"
+            }
+          ],
+          "address": {
+            "streetAddress": "CAMPO DE MARTE LIMA",
+            "locality": "JESUS MARIA",
+            "region": "LIMA",
+            "department": "LIMA",
+            "countryName": "PERU"
+          },
+          "contactPoint": {
+            "telephone": "000000"
+          },
+          "roles": [
+            "buyer",
+            "procuringEntity"
+          ]
+        },
+        {
+          "id": "PE-RUC-20297868790",
+          "name": "UNIVERSIDAD SAN IGNACIO DE LOYOLA S.R.L.",
+          "identifier": {
+            "scheme": "PE-RUC",
+            "id": "20297868790",
+            "legalName": "UNIVERSIDAD SAN IGNACIO DE LOYOLA S.R.L."
+          },
+          "address": {
+            "countryName": "PERU"
+          },
+          "contactPoint": {
+            "email": "correo.grupo.participantes@gmail.com"
+          },
+          "roles": [
+            "tenderer",
+            "supplier"
+          ]
+        }
+      ],
+      "sources": [
+        {
+          "id": "seace_v3",
+          "name": "Sistema Electrónico de Contrataciones del Estado - Versión 3",
+          "url": "https://prodapp2.seace.gob.pe/seacebus-uiwd-pub/buscadorPublico/buscadorPublico.xhtml"
+        }
+      ],
+      "dataSegmentation": {
+        "id": "2024-03",
+        "criteria": [
+          "añoPublicacionProceso",
+          "mesPublicacionProceso"
+        ]
+      }
+    },
+    {
+      "ocid": "ocds-dgv273-seacev3-999999",
+      "id": "ocds-dgv273-seacev3-999999-2024-03-29T08:18:34.503480-05:00",
+      "date": "2024-03-29T08:18:34.503467-05:00",
+      "publishedDate": "2024-03-29T08:18:34.503485-05:00",
+      "tag": [
+        "planning",
+        "tender"
+      ],
+      "initiationType": "tender",
+      "buyer": {
+        "id": "PE-CONSUCODE-10249",
+        "name": "FUERZA AEREA DEL PERU"
+      },
+      "planning": {
+        "budget": {
+          "description": "Fondos Públicos"
+        }
+      },
+      "tender": {
+        "id": "999999",
+        "title": "DIRECTA-PROC-4-2024-FAP/DIGED-1",
+        "description": "PROGRAMA DE ESPECIALIZACIÓN EN ADMINISTRACIÓN DIGED PP-0135",
+        "procuringEntity": {
+          "id": "PE-CONSUCODE-10249",
+          "name": "FUERZA AEREA DEL PERU"
+        },
+        "datePublished": "2024-03-27T14:15:00-05:00",
+        "procurementMethod": "direct",
+        "procurementMethodDetails": "Contratación Directa",
+        "mainProcurementCategory": "services",
+        "additionalProcurementCategories": [
+          "services"
+        ],
+        "value": {
+          "amount": 0.0,
+          "currency": "PEN",
+          "currencyName": "Soles",
+          "amount_PEN": 0.0
+        },
+        "items": [
+          {
+            "id": "20656559",
+            "position": "1",
+            "description": "PROGRAMA DE ESPECIALIZACIÓN EN ADMINISTRACIÓN DIGED PP-0135",
+            "statusDetails": "CONVOCADO",
+            "status": "active",
+            "classification": {
+              "id": "8612170200326653",
+              "description": "ESPECIALIZACION EN ADMINISTRACION Y GESTION PUBLICA",
+              "scheme": "CUBSO"
+            },
+            "additionalClassifications": [
+              {
+                "id": "86121702",
+                "description": "Programas de postgrado",
+                "scheme": "UNSPSC"
+              }
+            ],
+            "quantity": 1.0,
+            "totalValue": {
+              "amount": 0.0,
+              "currency": "PEN",
+              "currencyName": "Soles"
+            },
+            "unit": {
+              "id": "36",
+              "name": "Servicio",
+              "scheme": "PE-SEACE3-UnidadMedida"
+            }
+          }
+        ],
+        "documents": [
+          {
+            "id": "24831474984999432",
+            "url": "https://prod1.seace.gob.pe/SeaceWeb-PRO/SdescargarArchivoAlfresco?fileCode=c2b5f4e5-7d73-4941-a137-f1d35b5cb5bd",
+            "datePublished": "2024-03-27T14:15:00-05:00",
+            "format": "pdf",
+            "documentType": "biddingDocuments",
+            "title": "Bases Administrativas",
+            "language": "es"
+          },
+          {
+            "id": "24831474984999433",
+            "url": "https://prod1.seace.gob.pe/SeaceWeb-PRO/SdescargarArchivoAlfresco?fileCode=a222a011-7dad-4782-974b-ad4ad2c48ad5",
+            "datePublished": "2024-03-27T14:15:00-05:00",
+            "format": "pdf",
+            "documentType": "biddingDocuments",
+            "title": "Resumen ejecutivo",
+            "language": "es"
+          }
+        ],
+        "hasTenderInformationProtectedByLaw": true
+      },
+      "parties": [
+        {
+          "id": "PE-CONSUCODE-10249",
+          "name": "FUERZA AEREA DEL PERU",
+          "identifier": {
+            "id": "10249",
+            "scheme": "PE-CONSUCODE",
+            "legalName": "FUERZA AEREA DEL PERU"
+          },
+          "additionalIdentifiers": [
+            {
+              "id": "20144364059",
+              "scheme": "PE-RUC",
+              "legalName": "FUERZA AEREA DEL PERU"
+            }
+          ],
+          "address": {
+            "streetAddress": "CAMPO DE MARTE LIMA",
+            "locality": "JESUS MARIA",
+            "region": "LIMA",
+            "department": "LIMA",
+            "countryName": "PERU"
+          },
+          "contactPoint": {
+            "telephone": "000000"
+          },
+          "roles": [
+            "buyer",
+            "procuringEntity"
+          ]
+        }
+      ],
+      "sources": [
+        {
+          "id": "seace_v3",
+          "name": "Sistema Electrónico de Contrataciones del Estado - Versión 3",
+          "url": "https://prodapp2.seace.gob.pe/seacebus-uiwd-pub/buscadorPublico/buscadorPublico.xhtml"
+        }
+      ],
+      "dataSegmentation": {
+        "id": "2024-03",
+        "criteria": [
+          "añoPublicacionProceso",
+          "mesPublicacionProceso"
+        ]
+      }
+    }
+  ],
+  "links": {
+    "next": "https://contratacionesabiertas.oece.gob.pe/api/v1/releasesAfter?format=json&order=desc&searchAfter=seace_v3%2C999998%2C1709251200000%2C1716039887169%2Cocds-dgv273-seacev3-2024-1926-52-2024-05-18T08%3A44%3A47.169137-05%3A00&first=ocds-dgv273-seacev3-999999-2024-04-14T08%3A29%3A51.507834-05%3A00",
+    "prev": null
+  },
+  "uri": "https://contratacionesabiertas.oece.gob.pe/api/v1/releasesAfter?format=json&order=desc"
+}
