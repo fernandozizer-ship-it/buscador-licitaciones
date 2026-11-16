@@ -123,10 +123,48 @@ PROVINCIAS = {
     "islay": "Arequipa", "mollendo": "Arequipa",
     "mariscal nieto": "Moquegua", "ilo": "Moquegua", "general sanchez cerro": "Moquegua",
 }
-_SEP = r"(?:\s*[-,/;:]|\s+(?:provincia|departamento|region|distrito|y)\b|\s*$|\s*\()"
-RE_DEP_TXT = re.compile(r"(?:departamento|region|gobierno regional)\s+(?:de\s+|del\s+)?([a-z ]{3,25}?)" + _SEP)
-RE_PROV_TXT = re.compile(r"(?:provincia|municipalidad provincial)\s+(?:de\s+|del\s+)?([a-z ]{3,30}?)" + _SEP)
-RE_DIST_TXT = re.compile(r"(?:distrito|municipalidad distrital)\s+(?:de\s+|del\s+)?([a-z ]{3,30}?)" + _SEP)
+_CLAVE = r"(?:provincia|departamento|region|distrito|centro poblado|localidad|sector|anexo|caserio)"
+_SEP = (r"(?=\s*[-,/;:(\"'\u201c\u201d]|\s+(?:de\s+la\s+|del\s+|de\s+|y\s+|en\s+(?:el|la)\s+)?" + _CLAVE +
+        r"\b|\s+(?:y|e|con|para|segun|cui|codigo|ejecucion|mejoramiento|creacion|ampliacion|"
+        r"contratacion|servicio|obra|meta)\b|\s*$)")
+RE_DEP_TXT = re.compile(r"(?:departamento|region|gobierno regional)\s+(?:de\s+|del\s+)?([a-z ]{3,30}?)" + _SEP)
+RE_PROV_TXT = re.compile(r"(?:provincia|municipalidad provincial)\s+(?:constitucional\s+)?(?:de\s+|del\s+)?"
+                         r"([a-z ]{3,40}?)" + _SEP)
+RE_DIST_TXT = re.compile(r"(?:distrito|municipalidad distrital)\s+(?:de\s+|del\s+)?([a-z ]{3,40}?)" + _SEP)
+_CONECTORES = {"de", "del", "la", "las", "los", "el", "y", "e", "en"}
+
+
+def limpiar_lugar(texto):
+    """Quita conectores sobrantes ("perene de la" -> "perene") y nombres de región pegados."""
+    if not texto:
+        return None
+    t = texto.strip()
+    m = re.match(r"^y departamento (?:de\s+)?(.+)$", t)
+    if m:
+        t = m.group(1)
+    t = re.sub(r"^(?:la\s+)?(?:provincia|distrito)\s+(?:de\s+|del\s+)?", "", t)
+    palabras = t.split()
+    # Cortar en palabras de lugar mal escritas o truncadas ("provinci", "laprovincia", "departa")
+    for i, w in enumerate(palabras):
+        if i > 0 and re.match(r"^(?:la|de|del)?(?:provin|depart|distri|region)", w):
+            palabras = palabras[:i]
+            break
+    while palabras and palabras[-1] in _CONECTORES:
+        palabras.pop()
+    while palabras and palabras[0] in ("de", "del", "y", "e", "en"):
+        palabras.pop(0)
+    if len(palabras) > 1:
+        for n in (3, 2, 1):  # "rodriguez de mendoza amazonas" -> "rodriguez de mendoza"
+            cola = " ".join(palabras[-n:])
+            if len(palabras) > n and cola in DEPARTAMENTOS:
+                palabras = palabras[:-n]
+                while palabras and palabras[-1] in _CONECTORES:
+                    palabras.pop()
+                break
+    t = " ".join(palabras)
+    if t in ("departamento", "provincia", "distrito", "region") or len(t) < 3:
+        return None
+    return t
 
 
 def _departamento_en(texto_n):
@@ -140,8 +178,11 @@ def _departamento_en(texto_n):
 
 
 def _titulo(s):
-    return " ".join(w.capitalize() if w not in ("de", "del", "la", "las", "los", "y") else w
-                    for w in s.split()) if s else None
+    if not s:
+        return None
+    palabras = s.split()
+    return " ".join(w.capitalize() if (i == 0 or w not in ("de", "del", "la", "las", "los", "y")) else w
+                    for i, w in enumerate(palabras))
 
 
 def ubicar(release, texto_n, entidad_n):
@@ -150,13 +191,13 @@ def ubicar(release, texto_n, entidad_n):
     dep = prov = dist = None
     m = RE_DEP_TXT.search(texto_n)
     if m:
-        dep = _departamento_en(m.group(1))
+        dep = _departamento_en(limpiar_lugar(m.group(1)) or "")
     m = RE_PROV_TXT.search(texto_n) or RE_PROV_TXT.search(entidad_n)
     if m:
-        prov = m.group(1).strip()
+        prov = limpiar_lugar(m.group(1))
     m = RE_DIST_TXT.search(texto_n) or RE_DIST_TXT.search(entidad_n)
     if m:
-        dist = m.group(1).strip()
+        dist = limpiar_lugar(m.group(1))
     if not dep and prov:
         dep = PROVINCIAS.get(prov) or DEPARTAMENTOS.get(prov)
     if not dep:
@@ -667,6 +708,11 @@ def main():
     almacen = leer_json(RUTA_DATOS, {"registros": []})
     registros = {r["id"]: r for r in almacen.get("registros", [])}
     especialidades_rx = compilar_especialidades(config)
+    # Recalcular provincia/distrito de lo ya guardado con las reglas actuales (es rápido)
+    for r in registros.values():
+        _, prov, dist = ubicar({}, normalizar(f"{r.get('titulo', '')} {r.get('descripcion', '')}"),
+                               normalizar(r.get("entidad")))
+        r["provincia"], r["distrito"] = prov, dist
     excluidas_rx = [regex_palabra(p) for p in config.get("palabras_excluidas", [])]
 
     inicio = ahora()
