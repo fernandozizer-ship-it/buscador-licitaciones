@@ -13,10 +13,13 @@ Fuentes (configurables en config.json -> "fuentes_avisos"):
 Regla anti-avalancha: la primera vez que se lee una fuente, lo encontrado se guarda en el
 buscador pero NO se envía por correo (salvo lo publicado en los últimos días).
 """
+import base64
+import binascii
 import datetime as dt
 import email.utils
 import hashlib
 import html
+import json
 import re
 import time
 import xml.etree.ElementTree as ET
@@ -173,6 +176,166 @@ def leer_detalle(sesion, url):
 
 
 # ----------------------------------------------------------------------------
+# Enlaces de Google Noticias -> dirección real de la publicación
+# ----------------------------------------------------------------------------
+def resolver_google(sesion, url):
+    """Convierte un enlace news.google.com/rss/articles/... en la dirección original."""
+    if "news.google." not in (url or "") or "/articles/" not in url:
+        return url
+    gid = url.split("/articles/")[1].split("?")[0]
+    # Formato antiguo: la dirección viene codificada dentro del identificador
+    try:
+        crudo = base64.urlsafe_b64decode(gid + "=" * (-len(gid) % 4))
+        m = re.search(rb"https?://[\x21-\x7e]+", crudo)
+        if m and b"AU_yqL" not in crudo[:8]:
+            return m.group(0).decode("ascii", "ignore")
+    except (ValueError, binascii.Error):
+        pass
+    # Formato nuevo: se pide la dirección a Google con la firma de la página del artículo
+    try:
+        r = sesion.get(f"https://news.google.com/rss/articles/{gid}", timeout=30)
+        sg = re.search(r'data-n-a-sg="([^"]+)"', r.text)
+        ts = re.search(r'data-n-a-ts="([^"]+)"', r.text)
+        if not (sg and ts):
+            return url
+        carga = ('["garturlreq",[["X","X",["X","X"],null,null,1,1,"US:en",null,1,null,null,null,null,null,0,1],'
+                 '"X","X",1,[1,1,1],1,1,null,0,0,null,0],"' + gid + '",' + ts.group(1) + ',"' + sg.group(1) + '"]')
+        cuerpo = "f.req=" + quote_plus(json.dumps([[["Fbv4je", carga, None, "generic"]]]))
+        r2 = sesion.post("https://news.google.com/_/DotsSplashUi/data/batchexecute", data=cuerpo,
+                         headers={"Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"}, timeout=30)
+        m = re.search(r'garturlres\\",\\"(https?://[^\\"]+)', r2.text)
+        if m:
+            return m.group(1)
+    except Exception as e:  # noqa: BLE001
+        print(f"    no se pudo resolver enlace de Google: {str(e)[:120]}")
+    return url
+
+
+# ----------------------------------------------------------------------------
+# Extraer datos legibles de una publicación
+# ----------------------------------------------------------------------------
+_INICIOS_PIP = (r"MEJORAMIENTO|CREACI[OÓ]N|AMPLIACI[OÓ]N|RECUPERACI[OÓ]N|INSTALACI[OÓ]N|RENOVACI[OÓ]N|"
+                r"CONSTRUCCI[OÓ]N|REHABILITACI[OÓ]N|REPARACI[OÓ]N|ADECUACI[OÓ]N|OPTIMIZACI[OÓ]N|"
+                r"REMODELACI[OÓ]N|REMODELACION|ELABORACI[OÓ]N DEL EXPEDIENTE")
+RE_OBRA_COMILLAS = re.compile(r"[“\"«¿]\s*((?:" + _INICIOS_PIP + r")\b[^”\"»?]{15,400})[”\"»?]", re.I)
+RE_OBRA_LIBRE = re.compile(r"((?:" + _INICIOS_PIP + r")\s+(?:DEL?|DE LOS|DE LAS|Y|EN)\b.{15,320}?)"
+                           r"(?=\s*,?\s*(?:con\s+)?(?:CUI|C[OÓ]DIGO)\b|\s+bajo\b|\s+mediante\b|\.\s|\s+-\s|$)", re.I)
+RE_CUI = re.compile(r"(?:CUI|C[OÓ]DIGO [UÚ]NICO DE INVERSIONES?)\s*(?:N[°º.o]*\s*)?:?\s*(\d{6,7})", re.I)
+RE_MONTO = re.compile(r"S/\.?\s?(\d{1,3}(?:[ .,]\d{3})+(?:[.,]\d{1,2})?|\d+(?:[.,]\d+)?)\s*(millones|mill\.?|MM)?", re.I)
+RE_ENTIDAD = re.compile(r"((?:Municipalidad|MUNICIPALIDAD) (?:Provincial|Distrital|PROVINCIAL|DISTRITAL)(?: de| DE)? [A-ZÁÉÍÓÚÑ][\wÁÉÍÓÚÑáéíóúñ]+(?: [A-ZÁÉÍÓÚÑa-záéíóúñ][\wÁÉÍÓÚÑáéíóúñ]+){0,3}"
+                        r"|(?:Gobierno|GOBIERNO) (?:Regional|REGIONAL)(?: de| DE| del| DEL)? [A-ZÁÉÍÓÚÑ][\wÁÉÍÓÚÑáéíóúñ]+(?: [A-ZÁÉÍÓÚÑ][\wÁÉÍÓÚÑáéíóúñ]+)?"
+                        r"|(?:Universidad|UNIVERSIDAD) (?:Nacional|NACIONAL)(?: [A-ZÁÉÍÓÚÑa-z][\wÁÉÍÓÚÑáéíóúñ]+){1,5})")
+
+
+def _monto(texto):
+    for m in RE_MONTO.finditer(texto):
+        num = m.group(1).replace(" ", "")
+        # 1.234.567,89 / 1,234,567.89 / 12.5
+        if re.search(r"[.,]\d{1,2}$", num) and len(re.findall(r"[.,]", num)) >= 1 and not re.search(r"[.,]\d{3}$", num):
+            entero, dec = num[:-3] if num[-3] in ".," else num[:-2], num[-2:]
+            num = re.sub(r"[.,]", "", entero) + "." + dec.strip(".,")
+        else:
+            num = re.sub(r"[.,](?=\d{3}(\D|$))", "", num).replace(",", ".")
+        try:
+            valor = float(num)
+        except ValueError:
+            continue
+        if m.group(2):
+            valor *= 1_000_000
+        if valor >= 10_000:
+            return round(valor, 2)
+    return None
+
+
+def clasificar(titulo_n, texto_n, es_nota):
+    if re.search(r"acercamiento al mercado|consulta al mercado|interaccion con el mercado|difusion del requerimiento|contratacion futura", titulo_n + " " + texto_n[:1500]):
+        return "Acercamiento al mercado"
+    if re.search(r"buena pro|adjudicacion|adjudico|acta de evaluacion|resultado|ganador", titulo_n):
+        return "Resultado / buena pro"
+    if re.search(r"circular|absolucion|acta de recepcion|bases integradas|cronograma|fe de erratas|modificacion|prorroga|comunicado n", titulo_n):
+        return "Documento de un proceso en curso"
+    if re.search(r"proceso de seleccion|convocatoria|bases|expresion(es)? de interes|licitacion|concurso publico|convoca", titulo_n):
+        return "Nota sobre una convocatoria" if es_nota and not re.search(r"proceso de seleccion n|bases", titulo_n) else "Convocatoria / proceso de selección"
+    return "Nota de prensa"
+
+
+def tipo_contratacion(texto_n):
+    if re.search(r"entidad privada supervisora|empresa privada supervisora|(?<![a-z])eps(?![a-z])|supervision de (la )?(obra|ejecucion)", texto_n):
+        if re.search(r"empresa privada (financista|que financia|para el financiamiento)|financiamiento y ejecucion", texto_n):
+            return "Ejecución y supervisión"
+        return "Supervisión"
+    if re.search(r"expediente tecnico|estudio definitivo", texto_n) and not re.search(r"ejecucion de (la )?obra", texto_n):
+        return "Expediente técnico"
+    if re.search(r"empresa privada|financiamiento y ejecucion|ejecucion de (la )?obra|ejecucion del proyecto|construccion", texto_n):
+        return "Ejecución de obra"
+    return None
+
+
+def enriquecer(sesion, aviso, normalizar, departamento_de, especialidades_rx, contexto_rx=None, excluir_rx=None):
+    """Abre la publicación y completa: clase, obra, tipo, especialidad, entidad, monto, CUI y fecha."""
+    url_real = resolver_google(sesion, aviso["url"])
+    if url_real != aviso["url"]:
+        aviso["url_original"] = url_real
+    detalle = leer_detalle(sesion, url_real) if not url_real.lower().endswith(".pdf") else ""
+    titulo = aviso.get("titulo", "")
+    texto = f"{titulo}. {aviso.get('resumen', '')} {detalle[:12000]}"
+    texto_n = normalizar(texto)
+    titulo_n = normalizar(titulo)
+    if detalle and contexto_rx and not coincide(normalizar(f"{titulo} {detalle[:8000]}"), contexto_rx):
+        aviso["descartar"] = "no es de obra"
+    if detalle and excluir_rx and coincide(normalizar(f"{titulo} {detalle[:2000]}"), excluir_rx):
+        aviso["descartar"] = "excluido"
+    aviso.pop("pendiente_contexto", None)
+    es_nota = "/noticias/" in url_real or ("gob.pe" not in url_real and "investinperu" not in url_real)
+    aviso["clase"] = clasificar(titulo_n, texto_n, es_nota)
+    m = RE_OBRA_COMILLAS.search(texto) or RE_OBRA_LIBRE.search(texto)
+    if m:
+        obra = re.sub(r"\s+", " ", m.group(1)).strip(" ,.;:-")
+        aviso["obra"] = obra[:1].upper() + obra[1:].lower() if obra.isupper() else obra
+    m = RE_CUI.search(texto)
+    if m:
+        aviso["cui"] = m.group(1)
+    monto = _monto(texto)
+    if monto:
+        aviso["monto"] = monto
+    aviso["tipo"] = tipo_contratacion(texto_n)
+    esp_texto = normalizar(aviso.get("obra") or titulo)
+    aviso["especialidades"] = [n for n, rxs in especialidades_rx.items() if any(r.search(esp_texto) for r in rxs)]
+    m = RE_ENTIDAD.search(detalle[:6000] or texto)
+    if m:
+        aviso["entidad"] = re.sub(r"\s+", " ", m.group(1)).strip()
+    if not aviso.get("fecha_real"):
+        f = fecha_es(detalle[:4000]) if detalle else None
+        if f:
+            aviso["fecha"], aviso["fecha_real"] = f.isoformat(timespec="minutes"), True
+    if detalle and not aviso.get("resumen"):
+        aviso["resumen"] = detalle[:300]
+    pistas = pistas_de(url_real, titulo, aviso.get("entidad") or aviso.get("medio"))
+    if aviso.get("entidad"):
+        pistas.insert(0, aviso["entidad"])
+    aviso["departamento"] = departamento_de(normalizar(f"{titulo} {aviso.get('obra', '')} {aviso.get('entidad', '')}"),
+                                            pistas) or aviso.get("departamento")
+    aviso["enriquecido"] = bool(detalle) or url_real == aviso["url"]
+    return aviso
+
+
+def volcar_diagnostico(sesion, urls, carpeta):
+    """Guarda copias de páginas para poder armar lectores específicos (p. ej. ProInversión)."""
+    import os
+    os.makedirs(carpeta, exist_ok=True)
+    for i, url in enumerate(urls, 1):
+        try:
+            r = sesion.get(url, timeout=60)
+            nombre = os.path.join(carpeta, f"pagina_{i}.html")
+            with open(nombre, "w", encoding="utf-8") as fh:
+                fh.write(f"<!-- {url} | HTTP {r.status_code} | {r.headers.get('content-type')} -->\n")
+                fh.write(r.text[:600000])
+            print(f"    diagnóstico guardado: {url} -> HTTP {r.status_code}, {len(r.text)} caracteres")
+        except Exception as e:  # noqa: BLE001
+            print(f"    diagnóstico falló {url}: {e}")
+
+
+# ----------------------------------------------------------------------------
 # Proceso principal de avisos
 # ----------------------------------------------------------------------------
 RE_SLUG_GOBPE = re.compile(r"gob\.pe/institucion/([a-z0-9\-]+)/", re.I)
@@ -195,12 +358,21 @@ def revisar(config, almacen, estado, sesion, normalizar, departamento_de, ahora)
     que corresponde enviar por correo."""
     claves_rx = compilar(config.get("palabras_clave_avisos", []), normalizar)
     excluir_rx = compilar(config.get("palabras_excluidas_avisos", []), normalizar)
+    contexto_rx = compilar(config.get("palabras_contexto_obra", []), normalizar)
+
+    def tiene_contexto(texto_n):
+        return coincide(texto_n, contexto_rx) if contexto_rx else True
     # Limpieza de lo ya guardado con las reglas actuales (región y exclusiones)
     for k in list(almacen):
         a = almacen[k]
         if coincide(normalizar(f"{a.get('titulo', '')} {a.get('resumen', '')}"), excluir_rx):
             del almacen[k]
             continue
+        if not tiene_contexto(normalizar(f"{a.get('titulo', '')} {a.get('resumen', '')} {a.get('obra', '')}")):
+            if a.get("enriquecido"):
+                del almacen[k]  # ya se revisó por dentro y no es de obra
+                continue
+            a["pendiente_contexto"] = True  # se verificará al abrir el detalle
         if not a.get("departamento"):
             a["departamento"] = departamento_de(normalizar(f"{a.get('titulo', '')} {a.get('resumen', '')}"),
                                                 pistas_de(a.get("url"), a.get("titulo"), a.get("medio")))
@@ -231,13 +403,18 @@ def revisar(config, almacen, estado, sesion, normalizar, departamento_de, ahora)
             if coincide(texto_n, excluir_rx):
                 continue
             relevante = coincide(texto_n, claves_fuente)
+            con_contexto = tiene_contexto(texto_n)
             detalle = ""
-            # Títulos genéricos ("Comunicado") se revisan por dentro, salvo en la primera lectura
-            if not relevante and fuente.get("revisar_detalle") and not primera_vez:
+            # Se abre la publicación cuando el título es genérico ("Comunicado") o no dice si es de obra
+            if fuente.get("revisar_detalle") and (not relevante or not con_contexto) and (relevante or not primera_vez):
                 detalle = leer_detalle(sesion, it["url"])
-                relevante = coincide(normalizar(detalle), claves_fuente) and not coincide(normalizar(detalle[:3000]), excluir_rx)
+                detalle_n = normalizar(detalle[:8000])
+                relevante = relevante or coincide(detalle_n, claves_fuente)
+                con_contexto = con_contexto or tiene_contexto(detalle_n)
+                if coincide(normalizar(detalle[:2500]), excluir_rx):
+                    relevante = False
                 time.sleep(0.5)
-            if not relevante:
+            if not (relevante and con_contexto):
                 continue
             fecha = it.get("fecha") or (fecha_es(detalle) if detalle else None)
             texto_completo = f"{it['titulo']} {it.get('resumen', '')} {detalle[:4000]}"
@@ -251,6 +428,7 @@ def revisar(config, almacen, estado, sesion, normalizar, departamento_de, ahora)
                 "departamento": departamento_de(normalizar(texto_completo),
                                                 pistas_de(it["url"], it["titulo"], it.get("medio"))),
                 "fecha": (fecha or ahora).isoformat(timespec="minutes"),
+                "fecha_real": fecha is not None,
                 "visto": ahora.isoformat(timespec="minutes"),
                 "url": it["url"],
             }
@@ -265,6 +443,36 @@ def revisar(config, almacen, estado, sesion, normalizar, departamento_de, ahora)
         print(f"  [{nombre}] {resumen[nombre]}{' (primera lectura: sin correo)' if primera_vez else ''}")
 
     estado["fuentes_avisos_vistas"] = sorted(fuentes_vistas)
+
+    # Completar datos legibles (obra, tipo, monto, CUI, fecha); primero lo que va al correo
+    especialidades_rx = {n: compilar(k, normalizar) for n, k in config.get("especialidades", {}).items()}
+    pendientes = [a for a in nuevos_para_correo if not a.get("enriquecido")]
+    pendientes += [a for a in almacen.values() if a.get("pendiente_contexto") and a not in pendientes]
+    pendientes += [a for a in almacen.values() if not a.get("enriquecido") and a not in pendientes]
+    tope = int(config.get("max_avisos_a_completar_por_ejecucion", 80))
+    for a in pendientes[:tope]:
+        if a.get("fecha_real") is None:
+            a["fecha_real"] = a.get("fecha") != a.get("visto")
+        try:
+            enriquecer(sesion, a, normalizar, departamento_de, especialidades_rx, contexto_rx, excluir_rx)
+        except Exception as e:  # noqa: BLE001
+            print(f"    no se pudo completar {a['url'][:70]}: {str(e)[:120]}")
+        time.sleep(0.4)
+    if pendientes:
+        print(f"  Avisos completados con detalle: {min(len(pendientes), tope)} de {len(pendientes)} pendientes")
+    # Tras abrir el detalle, descartar lo que resultó no ser contratación de obra
+    descartados = [k for k, a in almacen.items() if a.get("descartar") or (
+        a.get("enriquecido") and coincide(normalizar(f"{a.get('titulo')} {a.get('obra', '')}"), excluir_rx))]
+    for k in descartados:
+        del almacen[k]
+    if descartados:
+        print(f"  Descartados tras revisar su contenido (no eran de obra): {len(descartados)}")
+    nuevos_para_correo = [a for a in nuevos_para_correo if a["id"] in almacen]
+
+    if config.get("diagnostico_urls"):
+        import os
+        volcar_diagnostico(sesion, config["diagnostico_urls"],
+                           os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "docs", "diagnostico"))
     # Historial de avisos: 180 días
     limite = ahora - dt.timedelta(days=int(config.get("dias_historial_avisos", 180)))
     for k in [k for k, a in almacen.items() if (_f(a.get("fecha")) or ahora) < limite]:
@@ -279,19 +487,39 @@ def _f(valor):
         return None
 
 
+COLORES_CLASE = {"Convocatoria / proceso de selección": "#15803d", "Documento de un proceso en curso": "#1d4ed8",
+                 "Acercamiento al mercado": "#b45309", "Resultado / buena pro": "#b91c1c",
+                 "Nota sobre una convocatoria": "#0f766e", "Nota de prensa": "#6b7280"}
+ORDEN_CLASE = list(COLORES_CLASE)
+
+
+def fecha_legible(a):
+    if a.get("fecha_real") is False or (a.get("fecha_real") is None and a.get("fecha") == a.get("visto")):
+        return "Fecha no indicada (detectado " + (a.get("visto") or "")[:10] + ")"
+    return (a.get("fecha") or "")[:10]
+
+
 def html_correo(avisos):
     if not avisos:
         return ""
     e = html.escape
     filas = []
-    for a in sorted(avisos, key=lambda x: (x["grupo"], x["fecha"]), reverse=False):
-        lugar = f"📍 {e(a['departamento'])} · " if a.get("departamento") else ""
+    for a in sorted(avisos, key=lambda x: (ORDEN_CLASE.index(x.get("clase")) if x.get("clase") in ORDEN_CLASE else 9,
+                                           x.get("fecha") or "")):
+        clase = a.get("clase") or "Aviso"
+        color = COLORES_CLASE.get(clase, "#6b7280")
+        nombre = a.get("obra") or a["titulo"]
+        datos = [x for x in (a.get("tipo"), ", ".join(a.get("especialidades") or []) or None, a.get("entidad"),
+                             a.get("departamento") and "📍 " + a["departamento"],
+                             a.get("monto") and f"💰 S/ {a['monto']:,.0f}", a.get("cui") and f"CUI {a['cui']}") if x]
         filas.append(f"""
 <tr><td style="padding:10px;border-bottom:1px solid #e5e7eb;font-family:Arial,sans-serif;font-size:14px">
-  <div style="font-size:12px;color:#6b7280">{e(a['grupo'])} · {e(a.get('medio') or a['fuente'])}</div>
-  <div style="font-weight:bold;margin:3px 0"><a href="{e(a['url'])}" style="color:#1d4ed8;text-decoration:none">{e(a['titulo'][:300])}</a></div>
-  <div style="color:#374151">{lugar}📅 {e(a['fecha'][:10])}</div>
-  <div style="font-size:12px;color:#6b7280">{e((a.get('resumen') or '')[:280])}</div>
+  <div style="font-size:12px"><span style="background:{color};color:#fff;padding:2px 7px;border-radius:10px">{e(clase)}</span>
+   <span style="color:#6b7280">&nbsp;{e(a['grupo'])}</span></div>
+  <div style="font-weight:bold;margin:5px 0"><a href="{e(a.get('url_original') or a['url'])}" style="color:#1d4ed8;text-decoration:none">{e(nombre[:300])}</a></div>
+  {f'<div style="font-size:12px;color:#6b7280">{e(a["titulo"][:200])}</div>' if a.get("obra") else ""}
+  <div style="color:#374151">{e(" · ".join(datos))}</div>
+  <div style="font-size:12px;color:#6b7280">📅 {e(fecha_legible(a))}</div>
 </td></tr>""")
-    return ('<h3 style="color:#7c3aed">📣 Obras por Impuestos, ANIN, PEIP y programas especiales</h3>'
+    return ('<h3 style="color:#7c3aed">📣 Obras por Impuestos, ANIN, PEIP y entidades especiales</h3>'
             '<table style="border-collapse:collapse;width:100%">' + "".join(filas) + "</table>")
