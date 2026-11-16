@@ -181,15 +181,35 @@ def leer_proinversion(sesion, fuente):
     departamento y estado). Intenta pedir más resultados por página; si el portal no lo acepta,
     se queda con la primera página (las más recientes)."""
     base = fuente.get("url") or URL_PROINVERSION
-    html_pag, usado = "", base
-    for url in (base + "?filterOXI.parametersQuery.PageSizePaging=60", base):
-        r = sesion.get(url, timeout=90)
-        if r.status_code == 200 and r.text.count('class="portafolio-card"') > 0:
-            html_pag, usado = r.text, url
-            if r.text.count('class="portafolio-card"') > 5:
+    r = sesion.get(base, timeout=90)  # abre la página (cookies de sesión) y sirve de respaldo
+    html_paginas = []
+    por_pagina = int(fuente.get("por_pagina", 50))
+    for pagina in range(1, int(fuente.get("paginas", 2)) + 1):
+        filtro = {"Page": pagina, "AnoInicial": 0, "AnoFinal": 0, "MontoInicial": 0, "MontoFinal": 99999999999,
+                  "TipologiaList": "", "EstadoConvocatoriaList": [], "TipoConvocatoriaList": [],
+                  "PageNumberPaging": pagina, "PageSizePaging": str(por_pagina), "MaximumPageNumbersToDisplay": "3",
+                  "NombreProyecto": "", "DepartamentoCodigo": "00", "ProvinciaCodigo": "0000",
+                  "DistritoCodigo": "000000", "NivelGobierno": "0", "TipoProyecto": "0",
+                  "CodigoSNIPInvierte": "", "IdSector": "0", "IdTipologia": "0"}
+        try:
+            rp = sesion.post(urljoin(base, "/es/oxi/FilterDetalleSeleccion"), data=json.dumps(filtro), timeout=90,
+                             headers={"Content-Type": "application/json; charset=utf-8", "Referer": base,
+                                      "X-Requested-With": "XMLHttpRequest"})
+            n = rp.text.count('class="portafolio-card"') if rp.status_code == 200 else 0
+            print(f"    página {pagina} (consulta interna) -> HTTP {rp.status_code}, {n} convocatorias")
+            if not n:
                 break
-    tarjetas = html_pag.split('class="portafolio-card"')[1:]
-    print(f"    {usado} -> {len(tarjetas)} convocatorias")
+            html_paginas.append(rp.text)
+            if n < por_pagina:
+                break
+        except Exception as e:  # noqa: BLE001
+            print(f"    consulta interna falló: {str(e)[:150]}")
+            break
+        time.sleep(1)
+    if not html_paginas and r.status_code == 200:
+        html_paginas = [r.text]
+    tarjetas = [t for h in html_paginas for t in h.split('class="portafolio-card"')[1:]]
+    print(f"    {base} -> {len(tarjetas)} convocatorias en total")
     items = []
     for t in tarjetas:
         m = re.search(r'<a href="([^"]*FichaProyectoConvocatoria[^"]*)"[^>]*>(.*?)</a>', t, re.S)
@@ -446,6 +466,16 @@ def revisar(config, almacen, estado, sesion, normalizar, departamento_de, ahora)
             a["departamento"] = departamento_de(normalizar(f"{a.get('titulo', '')} {a.get('resumen', '')}"),
                                                 pistas_de(a.get("url"), a.get("titulo"), a.get("medio")))
     dias_correo = int(config.get("dias_primera_carga", 3))
+    dias_max = int(config.get("dias_maximos_aviso_correo", 7))
+
+    def correo_ok(fecha, primera_vez):
+        """Primera lectura de una fuente: solo lo de los últimos días. Después: todo lo nuevo,
+        salvo lo que trae una fecha de publicación antigua (historial que recién aparece)."""
+        if fecha is None:
+            return not primera_vez
+        if fecha >= ahora - dt.timedelta(days=dias_correo):
+            return True
+        return not primera_vez and fecha >= ahora - dt.timedelta(days=dias_max)
     fuentes_vistas = set(estado.get("fuentes_avisos_vistas", []))
     titulos_existentes = {normalizar(a.get("titulo"))[:120] for a in almacen.values()}
     nuevos_para_correo, resumen = [], {}
@@ -491,8 +521,7 @@ def revisar(config, almacen, estado, sesion, normalizar, departamento_de, ahora)
                 almacen[aid] = aviso
                 titulos_existentes.add(titulo_n[:120])
                 agregados += 1
-                reciente = fecha is not None and fecha >= ahora - dt.timedelta(days=dias_correo)
-                if (not primera_vez or reciente) and aviso["clase"] != "Resultado / buena pro":
+                if correo_ok(fecha, primera_vez) and aviso["clase"] != "Resultado / buena pro":
                     nuevos_para_correo.append(aviso)
                 continue
             texto_n = normalizar(f"{it['titulo']} {it.get('resumen', '')}")
@@ -531,8 +560,7 @@ def revisar(config, almacen, estado, sesion, normalizar, departamento_de, ahora)
             almacen[aid] = aviso
             titulos_existentes.add(titulo_n[:120])
             agregados += 1
-            reciente = fecha is not None and fecha >= ahora - dt.timedelta(days=dias_correo)
-            if not primera_vez or reciente:
+            if correo_ok(fecha, primera_vez):
                 nuevos_para_correo.append(aviso)
         fuentes_vistas.add(nombre)
         resumen[nombre] = f"{len(items)} leídos, {agregados} nuevos"

@@ -263,7 +263,9 @@
       "nombre": "OxI - ProInversión (lista oficial)",
       "grupo": "Obras por Impuestos",
       "tipo": "proinversion",
-      "url": "https://web.investinperu.pe/es/oxi/procesos-de-seleccion"
+      "url": "https://web.investinperu.pe/es/oxi/procesos-de-seleccion",
+      "paginas": 2,
+      "por_pagina": 50
     },
     {
       "nombre": "ANIN - gob.pe",
@@ -482,12 +484,6 @@
     }
   ],
   "max_avisos_a_completar_por_ejecucion": 150,
-  "diagnostico_urls": [
-    "https://web.investinperu.pe/es/oxi/procesos-de-seleccion?filterOXI.parametersQuery.PageSizePaging=60",
-    "https://web.investinperu.pe/bundles/landingPage2?v=4ZkKKilx5UcXyL-qypgRS-uNAfxMCi3CLHFOnZC3w601",
-    "https://web.investinperu.pe/bundles/librarieApp?v=bAK7XXulciO0HfTk9Pf83sxugBMiSDDWWi5M7sCaT9M1",
-    "https://web.investinperu.pe/bundles/files?v=Nxl6pbQ68AS36xPyEGhwQfqy7N3HM_U6eBSH6iFgEUY1"
-  ],
   "palabras_contexto_obra": [
     "obra",
     "obras",
@@ -547,5 +543,6 @@
     "mercado de abastos",
     "losa deportiva",
     "electrificacion"
-  ]
+  ],
+  "dias_maximos_aviso_correo": 7
 }
