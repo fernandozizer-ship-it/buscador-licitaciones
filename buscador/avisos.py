@@ -69,7 +69,8 @@ def url_canonica(url):
     p = urlsplit(url)
     if "news.google." in p.netloc:
         return url  # el enlace de Google Noticias es único tal cual
-    return urlunsplit((p.scheme or "https", p.netloc.lower(), p.path.rstrip("/"), "", ""))
+    consulta = "&".join(x for x in p.query.split("&") if x and not x.lower().startswith(("utm_", "fbclid", "gclid")))
+    return urlunsplit((p.scheme or "https", p.netloc.lower(), p.path.rstrip("/"), consulta, ""))
 
 
 def id_de(url):
@@ -161,6 +162,74 @@ def leer_pagina(sesion, fuente):
             n += 1
         print(f"    {url} -> {n} enlaces")
         time.sleep(0.5)
+    return items
+
+
+# ----------------------------------------------------------------------------
+# ProInversión: lista oficial de procesos de selección OxI (web.investinperu.pe)
+# ----------------------------------------------------------------------------
+URL_PROINVERSION = "https://web.investinperu.pe/es/oxi/procesos-de-seleccion"
+
+
+def _campo(bloque, etiqueta):
+    m = re.search(r"<b>\s*" + etiqueta + r"\s*:?\s*</b>(.*?)</p>", bloque, re.S | re.I)
+    return re.sub(r"\s+", " ", texto_plano(m.group(1))).strip() if m else ""
+
+
+def leer_proinversion(sesion, fuente):
+    """Lee las tarjetas de convocatorias OxI (nombre del proyecto, entidad, monto, tipo, fecha,
+    departamento y estado). Intenta pedir más resultados por página; si el portal no lo acepta,
+    se queda con la primera página (las más recientes)."""
+    base = fuente.get("url") or URL_PROINVERSION
+    html_pag, usado = "", base
+    for url in (base + "?filterOXI.parametersQuery.PageSizePaging=60", base):
+        r = sesion.get(url, timeout=90)
+        if r.status_code == 200 and r.text.count('class="portafolio-card"') > 0:
+            html_pag, usado = r.text, url
+            if r.text.count('class="portafolio-card"') > 5:
+                break
+    tarjetas = html_pag.split('class="portafolio-card"')[1:]
+    print(f"    {usado} -> {len(tarjetas)} convocatorias")
+    items = []
+    for t in tarjetas:
+        m = re.search(r'<a href="([^"]*FichaProyectoConvocatoria[^"]*)"[^>]*>(.*?)</a>', t, re.S)
+        if not m:
+            continue
+        url = urljoin(base, html.unescape(m.group(1)))
+        nombre = re.sub(r"\s+", " ", texto_plano(m.group(2))).strip()
+        entidad = re.search(r'card-text-oxi-seleccion"><b>([^<]+)</b>', t)
+        monto_txt = _campo(t, "Monto Convocatoria")
+        tipo_conv = _campo(t, "Tipo de Convocatoria")
+        intervencion = _campo(t, "Tipo de Intervenci(?:ó|&#243;|o)n")
+        fecha_m = re.search(r"Fecha Convocatoria:\s*</b>\s*</span>\s*(\d{2}/\d{2}/\d{4})", t)
+        dep = re.search(r"Departamento:\s*<span[^>]*>([^<]+)</span>", t)
+        estado = re.search(r"Estado:\s*([^<]+)</span>", t)
+        fecha = None
+        if fecha_m:
+            d, mth, y = fecha_m.group(1).split("/")
+            fecha = dt.datetime(int(y), int(mth), int(d), 12, tzinfo=LIMA_TZ)
+        monto = None
+        mm = re.search(r"([\d,]+(?:\.\d+)?)", monto_txt.replace(" ", ""))
+        if mm:
+            try:
+                monto = float(mm.group(1).replace(",", ""))
+            except ValueError:
+                monto = None
+        estado_txt = estado.group(1).strip() if estado else ""
+        items.append({
+            "titulo": nombre, "url": url, "fecha": fecha, "medio": "ProInversión", "resumen": "",
+            "_completo": {
+                "obra": nombre[:1] + nombre[1:].lower() if nombre.isupper() else nombre,
+                "entidad": html.unescape(entidad.group(1)).strip().title() if entidad else "",
+                "monto": monto,
+                "tipo": "Supervisión" if "supervisora" in tipo_conv.lower() else "Ejecución de obra (empresa privada financista)",
+                "intervencion": intervencion,
+                "departamento_txt": dep.group(1).strip() if dep else "",
+                "estado_oxi": estado_txt,
+                "clase": "Resultado / buena pro" if "adjudic" in estado_txt.lower() else (
+                    "Convocatoria / proceso de selección" if "proceso" in estado_txt.lower() else "Documento de un proceso en curso"),
+            },
+        })
     return items
 
 
@@ -388,7 +457,12 @@ def revisar(config, almacen, estado, sesion, normalizar, departamento_de, ahora)
         primera_vez = nombre not in fuentes_vistas
         claves_fuente = compilar(fuente["palabras_clave"], normalizar) if fuente.get("palabras_clave") else claves_rx
         try:
-            items = leer_rss(sesion, fuente) if fuente.get("tipo") == "rss" else leer_pagina(sesion, fuente)
+            if fuente.get("tipo") == "rss":
+                items = leer_rss(sesion, fuente)
+            elif fuente.get("tipo") == "proinversion":
+                items = leer_proinversion(sesion, fuente)
+            else:
+                items = leer_pagina(sesion, fuente)
         except Exception as e:  # noqa: BLE001
             print(f"  [{nombre}] no se pudo leer: {str(e)[:200]}")
             resumen[nombre] = "error"
@@ -397,7 +471,29 @@ def revisar(config, almacen, estado, sesion, normalizar, departamento_de, ahora)
         for it in items:
             aid = id_de(it["url"])
             titulo_n = normalizar(it["titulo"])
-            if aid in almacen or titulo_n[:120] in titulos_existentes:
+            completo = it.get("_completo")
+            if completo and aid in almacen:
+                almacen[aid].update({"clase": completo["clase"], "estado_oxi": completo["estado_oxi"]})
+                continue
+            if aid in almacen or (titulo_n[:120] in titulos_existentes and not completo):
+                continue
+            if completo:
+                fecha = it.get("fecha")
+                dep_txt = normalizar(completo.pop("departamento_txt"))
+                aviso = {"id": aid, "fuente": nombre, "grupo": fuente.get("grupo", "Obras por Impuestos"),
+                         "titulo": it["titulo"], "resumen": completo.get("intervencion", ""), "medio": "ProInversión",
+                         "departamento": departamento_de(dep_txt, [dep_txt]) if dep_txt else None,
+                         "fecha": (fecha or ahora).isoformat(timespec="minutes"), "fecha_real": fecha is not None,
+                         "visto": ahora.isoformat(timespec="minutes"), "url": it["url"], "enriquecido": True, **completo}
+                esp_n = normalizar(it["titulo"])
+                aviso["especialidades"] = [n for n, k in config.get("especialidades", {}).items()
+                                           if coincide(esp_n, compilar(k, normalizar))]
+                almacen[aid] = aviso
+                titulos_existentes.add(titulo_n[:120])
+                agregados += 1
+                reciente = fecha is not None and fecha >= ahora - dt.timedelta(days=dias_correo)
+                if (not primera_vez or reciente) and aviso["clase"] != "Resultado / buena pro":
+                    nuevos_para_correo.append(aviso)
                 continue
             texto_n = normalizar(f"{it['titulo']} {it.get('resumen', '')}")
             if coincide(texto_n, excluir_rx):
@@ -467,7 +563,8 @@ def revisar(config, almacen, estado, sesion, normalizar, departamento_de, ahora)
         del almacen[k]
     if descartados:
         print(f"  Descartados tras revisar su contenido (no eran de obra): {len(descartados)}")
-    nuevos_para_correo = [a for a in nuevos_para_correo if a["id"] in almacen]
+    nuevos_para_correo = [a for a in nuevos_para_correo
+                          if a["id"] in almacen and a.get("clase") != "Resultado / buena pro"]
 
     if config.get("diagnostico_urls"):
         import os

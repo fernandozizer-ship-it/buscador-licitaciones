@@ -260,21 +260,10 @@
       ]
     },
     {
-      "nombre": "OxI - ProInversión: procesos de selección",
+      "nombre": "OxI - ProInversión (lista oficial)",
       "grupo": "Obras por Impuestos",
-      "tipo": "pagina",
-      "urls": [
-        "https://web.investinperu.pe/es/oxi/procesos-de-seleccion"
-      ],
-      "patron": "investinperu\\.pe/.+",
-      "palabras_clave": [
-        "proceso de seleccion",
-        "convocatoria",
-        "oxi",
-        "ley 29230",
-        "empresa privada",
-        "entidad privada supervisora"
-      ]
+      "tipo": "proinversion",
+      "url": "https://web.investinperu.pe/es/oxi/procesos-de-seleccion"
     },
     {
       "nombre": "ANIN - gob.pe",
@@ -494,8 +483,10 @@
   ],
   "max_avisos_a_completar_por_ejecucion": 150,
   "diagnostico_urls": [
-    "https://web.investinperu.pe/es/oxi/procesos-de-seleccion",
-    "https://www.gob.pe/busquedas?term=obras+por+impuestos+proceso+de+seleccion&sort_by=recent"
+    "https://web.investinperu.pe/es/oxi/procesos-de-seleccion?filterOXI.parametersQuery.PageSizePaging=60",
+    "https://web.investinperu.pe/bundles/landingPage2?v=4ZkKKilx5UcXyL-qypgRS-uNAfxMCi3CLHFOnZC3w601",
+    "https://web.investinperu.pe/bundles/librarieApp?v=bAK7XXulciO0HfTk9Pf83sxugBMiSDDWWi5M7sCaT9M1",
+    "https://web.investinperu.pe/bundles/files?v=Nxl6pbQ68AS36xPyEGhwQfqy7N3HM_U6eBSH6iFgEUY1"
   ],
   "palabras_contexto_obra": [
     "obra",
