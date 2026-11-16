@@ -38,10 +38,11 @@ RUTA_DATOS = os.path.join(RAIZ, "docs", "datos.json")
 RUTA_ESTADO = os.path.join(RAIZ, "estado.json")
 RUTA_MUESTRA = os.path.join(RAIZ, "muestra_api.json")
 
-API_INICIO = "https://contratacionesabiertas.oece.gob.pe/api/v1/releasesAfter?format=json&order=desc"
+API_ARCHIVOS = "https://contratacionesabiertas.oece.gob.pe/api/v1/files?page={pagina}&paginateBy=50&format=json"
 URL_PROCESO = "https://contratacionesabiertas.oece.gob.pe/proceso/{ocid}"
 LIMA_TZ = dt.timezone(dt.timedelta(hours=-5))
 ESTADOS_CERRADOS = {"complete", "cancelled", "unsuccessful", "withdrawn"}
+ESTADOS_NO_VIGENTES = {"Cerrado", "Contratado", "Adjudicado"}
 
 
 # ----------------------------------------------------------------------------
@@ -230,6 +231,21 @@ def texto_de(tender):
     return " ".join(p for p in partes if isinstance(p, str))
 
 
+def estado_proceso(release, tender):
+    if tender.get("status") in ESTADOS_CERRADOS:
+        return "Cerrado"
+    if release.get("contracts"):
+        return "Contratado"
+    if release.get("awards"):
+        return "Adjudicado"
+    tags = release.get("tag") or []
+    if "contract" in tags:
+        return "Contratado"
+    if "award" in tags:
+        return "Adjudicado"
+    return "Convocado"
+
+
 def convertir(release, especialidades_rx):
     """Convierte un release OCDS en un registro del buscador (o None si no es de interés)."""
     tender = release.get("tender") or {}
@@ -275,7 +291,7 @@ def convertir(release, especialidades_rx):
         "monto": monto,
         "moneda": valor.get("currency") or "PEN",
         "procedimiento": tender.get("procurementMethodDetails") or tender.get("procurementMethod") or "",
-        "estado": tender.get("status") or "",
+        "estado": estado_proceso(release, tender),
         "publicado": iso(parse_fecha(tender.get("datePublished")) or parse_fecha(release.get("date"))),
         "cierre": iso(parse_fecha(periodo.get("endDate"))),
         "actualizado": iso(parse_fecha(release.get("date"))),
@@ -284,8 +300,11 @@ def convertir(release, especialidades_rx):
 
 
 # ----------------------------------------------------------------------------
-# Descarga
+# Descarga (archivos mensuales de datos abiertos del OECE)
 # ----------------------------------------------------------------------------
+# La API "releasesAfter" no ordena por fecha, así que se usan los archivos de
+# descarga masiva por mes (los mismos de contratacionesabiertas.oece.gob.pe/descargas),
+# que el OECE regenera a diario.
 CABECERAS = {
     "User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
                    "(KHTML, like Gecko) Chrome/130.0 Safari/537.36"),
@@ -293,76 +312,232 @@ CABECERAS = {
     "Accept-Language": "es-PE,es;q=0.9",
     "Referer": "https://contratacionesabiertas.oece.gob.pe/",
 }
+RE_ANIO_MES = re.compile(r"(20\d\d)[/_\-.]?(0[1-9]|1[0-2]|[1-9])(?!\d)")
+
+
+def nueva_sesion():
+    sesion = requests.Session()
+    sesion.headers.update(CABECERAS)
+    return sesion
 
 
 def pedir(sesion, url, intentos=3):
-    """Pide una página de la API; deja en el registro la respuesta exacta si falla."""
-    variantes = [url]
+    """Pide un JSON a la API; deja en el registro la respuesta exacta si falla."""
     ultimo = None
-    for variante in variantes:
-        for i in range(intentos):
-            try:
-                r = sesion.get(variante, timeout=60)
-                if r.status_code == 200:
-                    return r.json()
-                ultimo = (f"HTTP {r.status_code} | servidor: {r.headers.get('server', '?')} | "
-                          f"respuesta: {r.text[:250].strip()!r}")
-                print(f"  intento {i + 1} en {variante[:70]}… → {ultimo}")
-                if r.status_code in (401, 403):
-                    break  # bloqueo: no insistir con la misma dirección
-            except (requests.RequestException, ValueError) as e:
-                ultimo = str(e)[:250]
-                print(f"  intento {i + 1} → error: {ultimo}")
-            time.sleep(3 * (i + 1))
+    for i in range(intentos):
+        try:
+            r = sesion.get(url, timeout=90)
+            if r.status_code == 200:
+                return r.json()
+            ultimo = (f"HTTP {r.status_code} | respuesta: {r.text[:250].strip()!r}")
+            print(f"  intento {i + 1} en {url[:80]} -> {ultimo}")
+            if r.status_code in (401, 403):
+                break
+        except (requests.RequestException, ValueError) as e:
+            ultimo = str(e)[:250]
+            print(f"  intento {i + 1} -> error: {ultimo}")
+        time.sleep(3 * (i + 1))
     raise RuntimeError(f"La API del OECE no respondió ({ultimo}) en {url}")
 
 
-def descargar(desde, max_paginas, pausa, diagnostico=False):
-    sesion = requests.Session()
-    sesion.headers.update(CABECERAS)
-    url, paginas, viejas_seguidas = API_INICIO, 0, 0
-    releases, muestra, mas_antigua = [], None, None
-    while url and paginas < max_paginas:
-        data = pedir(sesion, url.replace(".osce.", ".oece."))
-        paginas += 1
-        if muestra is None:
-            muestra = data
-        lote = data.get("releases") or data.get("results") or []
-        recientes = 0
-        for rel in lote:
-            f = parse_fecha(rel.get("date"))
-            if f and (mas_antigua is None or f < mas_antigua):
-                mas_antigua = f
+def mes_de_archivo(item):
+    """Intenta saber a qué (año, mes) corresponde una entrada de la lista de archivos."""
+    anio = item.get("year") or item.get("anio") or item.get("año")
+    mes = item.get("month") or item.get("mes")
+    try:
+        if anio and mes:
+            return int(anio), int(mes)
+    except (TypeError, ValueError):
+        pass
+    textos = [str(v) for k, v in item.items() if k != "files" and isinstance(v, (str, int))]
+    textos += [str(v) for v in (item.get("files") or {}).values()]
+    for t in textos:
+        m = RE_ANIO_MES.search(t)
+        if m:
+            return int(m.group(1)), int(m.group(2))
+    return None
+
+
+def meses_entre(desde, hasta):
+    a, m = desde.year, desde.month
+    meses = []
+    while (a, m) <= (hasta.year, hasta.month):
+        meses.append((a, m))
+        a, m = (a + 1, 1) if m == 12 else (a, m + 1)
+    return meses
+
+
+def listar_archivos(sesion, meses, diagnostico):
+    """Devuelve {(año, mes): url_json} para los meses pedidos."""
+    encontrados, sin_mes, primera = {}, [], None
+    for pagina in range(1, 8):
+        data = pedir(sesion, API_ARCHIVOS.format(pagina=pagina))
+        if primera is None:
+            primera = data
+        resultados = data.get("results") or data.get("data") or []
+        for item in resultados:
+            url = ((item.get("files") or {}).get("json") or "").replace(".osce.", ".oece.")
+            if not url:
+                continue
+            am = mes_de_archivo(item)
+            if am is None:
+                sin_mes.append(url)
+            elif am in meses and am not in encontrados:
+                encontrados[am] = url
+        total_pag = (data.get("pagination") or {}).get("num_pages") or 1
+        if set(meses) <= set(encontrados) or pagina >= int(total_pag):
+            break
+    if diagnostico and primera is not None:
+        corto = dict(primera)
+        if isinstance(corto.get("results"), list):
+            corto["results"] = corto["results"][:6]
+        guardar_json(RUTA_MUESTRA, {"lista_de_archivos": corto})
+    print(f"Archivos mensuales encontrados: {sorted(encontrados)} | sin mes reconocible: {len(sin_mes)}")
+    if not encontrados and sin_mes:
+        print("AVISO: no se reconoció el mes de los archivos; se usa el primero de la lista.")
+        encontrados[meses[-1]] = sin_mes[0]
+    if not encontrados:
+        raise RuntimeError("No se encontraron archivos mensuales en la API del OECE")
+    return encontrados
+
+
+def descargar_archivo(sesion, url, destino):
+    for i in range(3):
+        try:
+            with sesion.get(url, timeout=300, stream=True) as r:
+                if r.status_code != 200:
+                    raise RuntimeError(f"HTTP {r.status_code}: {r.text[:200]!r}")
+                total = 0
+                with open(destino, "wb") as fh:
+                    for bloque in r.iter_content(1 << 20):
+                        fh.write(bloque)
+                        total += len(bloque)
+            print(f"  descargado {total / 1e6:.1f} MB")
+            return
+        except (requests.RequestException, RuntimeError) as e:
+            print(f"  intento {i + 1} de descarga falló: {e}")
+            time.sleep(10 * (i + 1))
+    raise RuntimeError(f"No se pudo descargar {url}")
+
+
+def iterar_objetos_json(texto_fh):
+    """Recorre uno a uno los elementos de "records" o "releases" sin cargar todo el archivo en memoria."""
+    decodificador = json.JSONDecoder()
+    buf, pos, fin = "", 0, False
+
+    def leer():
+        nonlocal buf, fin
+        trozo = texto_fh.read(1 << 20)
+        if not trozo:
+            fin = True
+        buf += trozo
+
+    inicio = re.compile(r'"(records|releases)"\s*:\s*\[')
+    while True:
+        m = inicio.search(buf)
+        if m:
+            pos = m.end()
+            break
+        if fin:
+            return
+        leer()
+    while True:
+        while True:
+            while pos < len(buf) and buf[pos] in " \t\r\n,":
+                pos += 1
+            if pos < len(buf) or fin:
+                break
+            leer()
+        if pos >= len(buf) or buf[pos] == "]":
+            return
+        try:
+            obj, fin_obj = decodificador.raw_decode(buf, pos)
+        except json.JSONDecodeError:
+            if fin:
+                raise
+            leer()
+            continue
+        yield obj
+        pos = fin_obj
+        if pos > (8 << 20):
+            buf, pos = buf[pos:], 0
+
+
+def releases_de_archivo(ruta):
+    """Entrega releases (compilados) desde un .zip / .json / .jsonl del OECE."""
+    import io
+    import zipfile
+
+    def de_objeto(obj):
+        if "compiledRelease" in obj:
+            return obj["compiledRelease"]
+        if "releases" in obj and "tender" not in obj:
+            con_tender = [r for r in obj.get("releases") or [] if isinstance(r, dict) and r.get("tender")]
+            return con_tender[-1] if con_tender else None
+        return obj
+
+    def de_flujo(nombre, binario):
+        texto = io.TextIOWrapper(binario, encoding="utf-8", errors="replace")
+        if nombre.endswith(".jsonl"):
+            for linea in texto:
+                linea = linea.strip()
+                if linea:
+                    rel = de_objeto(json.loads(linea))
+                    if rel:
+                        yield rel
+        else:
+            for obj in iterar_objetos_json(texto):
+                rel = de_objeto(obj)
+                if rel:
+                    yield rel
+
+    if zipfile.is_zipfile(ruta):
+        with zipfile.ZipFile(ruta) as z:
+            for nombre in z.namelist():
+                if nombre.lower().endswith((".json", ".jsonl")):
+                    with z.open(nombre) as fh:
+                        yield from de_flujo(nombre.lower(), fh)
+    else:
+        import gzip
+        with open(ruta, "rb") as crudo:
+            gz = crudo.read(2) == b"\x1f\x8b"
+        abrir = gzip.open if gz else open
+        with abrir(ruta, "rb") as fh:
+            yield from de_flujo(ruta.lower().replace(".gz", ""), fh)
+
+
+def descargar(desde, diagnostico=False):
+    """Descarga los archivos mensuales necesarios y devuelve los releases publicados desde 'desde'."""
+    import tempfile
+    sesion = nueva_sesion()
+    meses = meses_entre(desde, ahora())
+    archivos = listar_archivos(sesion, meses, diagnostico)
+    carpeta = tempfile.mkdtemp(prefix="oece_")
+    releases, leidos = [], 0
+    from collections import Counter
+    categorias = Counter()
+    for am, url in sorted(archivos.items()):
+        print(f"Mes {am[0]}-{am[1]:02d}: {url}")
+        destino = os.path.join(carpeta, f"{am[0]}_{am[1]:02d}.dat")
+        descargar_archivo(sesion, url, destino)
+        for rel in releases_de_archivo(destino):
+            leidos += 1
+            tender = rel.get("tender") or {}
+            categorias[normalizar(tender.get("mainProcurementCategory")) or "(vacio)"] += 1
+            if diagnostico and leidos <= 2:
+                muestra = leer_json(RUTA_MUESTRA, {})
+                muestra.setdefault("ejemplos_de_procesos", []).append(rel)
+                guardar_json(RUTA_MUESTRA, muestra)
+            f = parse_fecha(tender.get("datePublished")) or parse_fecha(rel.get("date"))
             if f is None or f >= desde:
                 releases.append(rel)
-                recientes += 1
-        viejas_seguidas = viejas_seguidas + 1 if (lote and recientes == 0) else 0
-        if viejas_seguidas >= 3 or not lote:
-            break
-        url = (data.get("links") or {}).get("next")
-        time.sleep(pausa)
-    print(f"Páginas leídas: {paginas} | releases desde {iso(desde)}: {len(releases)} | "
-          f"fecha más antigua alcanzada: {iso(mas_antigua)}")
-    if paginas >= max_paginas:
-        print("AVISO: se llegó al máximo de páginas; sube max_paginas_por_ejecucion en config.json")
-    if diagnostico and muestra is not None:
-        guardar_diagnostico(muestra, releases)
+        try:
+            os.remove(destino)
+        except OSError:
+            pass
+    print(f"Procesos leídos: {leidos} | publicados desde {iso(desde)}: {len(releases)}")
+    print("DIAGNÓSTICO — categorías:", dict(categorias.most_common(8)))
     return releases
-
-
-def guardar_diagnostico(muestra, releases):
-    corto = dict(muestra)
-    if isinstance(corto.get("releases"), list):
-        corto["releases"] = corto["releases"][:5]
-    guardar_json(RUTA_MUESTRA, corto)
-    from collections import Counter
-    cats = Counter(normalizar((r.get("tender") or {}).get("mainProcurementCategory")) or "(vacío)" for r in releases)
-    tags = Counter(",".join(r.get("tag") or []) for r in releases)
-    proc = Counter((r.get("tender") or {}).get("procurementMethodDetails") or "(vacío)" for r in releases)
-    print("DIAGNÓSTICO — categorías:", dict(cats.most_common(10)))
-    print("DIAGNÓSTICO — tags:", dict(tags.most_common(10)))
-    print("DIAGNÓSTICO — procedimientos:", dict(proc.most_common(15)))
-    print("DIAGNÓSTICO — claves de primer release:", list((releases[0] if releases else {}).keys()))
 
 
 # ----------------------------------------------------------------------------
@@ -371,7 +546,7 @@ def guardar_diagnostico(muestra, releases):
 def pasa_filtro_correo(reg, config, excluidas_rx):
     if reg["tipo"] not in config.get("tipos_para_correo", []):
         return False
-    if reg.get("estado") in ESTADOS_CERRADOS:
+    if reg.get("estado") in ESTADOS_NO_VIGENTES:
         return False
     cierre = parse_fecha(reg.get("cierre"))
     if cierre and cierre < ahora():
@@ -496,14 +671,18 @@ def main():
 
     inicio = ahora()
     ultima = parse_fecha(estado.get("ultima_ejecucion_ok"))
-    primera_vez = ultima is None
-    desde = (inicio - dt.timedelta(days=int(config.get("dias_primera_carga", 7)))) if primera_vez \
-        else (ultima - dt.timedelta(hours=6))  # solapamiento: lo repetido se descarta
+    primera_vez = ultima is None or not registros
+    if primera_vez:
+        # El buscador arranca con varias semanas de historia; el correo solo con lo más reciente
+        desde = inicio - dt.timedelta(days=int(config.get("dias_carga_inicial_buscador", 45)))
+        correo_desde = inicio - dt.timedelta(days=int(config.get("dias_primera_carga", 3)))
+    else:
+        # Margen de 3 días por si el OECE publica con retraso (lo ya visto no se repite)
+        desde = correo_desde = ultima - dt.timedelta(days=3)
     diagnostico = primera_vez or os.environ.get("DIAGNOSTICO") == "1"
 
     try:
-        releases = descargar(desde, int(config.get("max_paginas_por_ejecucion", 600)),
-                             float(config.get("pausa_entre_paginas_seg", 0.4)), diagnostico)
+        releases = descargar(desde, diagnostico)
     except RuntimeError as e:
         estado["fallas_seguidas"] = int(estado.get("fallas_seguidas", 0)) + 1
         estado["ultimo_error"] = f"{iso(inicio)} {e}"
@@ -532,7 +711,8 @@ def main():
         else:
             reg["visto"] = iso(inicio)
             registros[reg["id"]] = reg
-            nuevos.append(reg)
+            if (parse_fecha(reg.get("publicado")) or inicio) >= correo_desde:
+                nuevos.append(reg)
 
     # Historial: descartar lo muy antiguo
     limite = inicio - dt.timedelta(days=int(config.get("dias_historial", 365)))

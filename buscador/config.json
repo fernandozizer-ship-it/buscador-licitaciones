@@ -23,9 +23,7 @@
 
   "dias_historial": 365,
 
-  "max_paginas_por_ejecucion": 1500,
-
-  "pausa_entre_paginas_seg": 0.4,
+  "dias_carga_inicial_buscador": 45,
 
   "especialidades": {
     "Pistas y veredas / vías urbanas": ["pistas", "veredas", "pavimentacion", "pavimento", "vias urbanas", "transitabilidad vehicular", "transitabilidad peatonal", "calles", "jiron", "avenida", "adoquin"],
