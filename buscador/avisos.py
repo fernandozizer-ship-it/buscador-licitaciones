@@ -182,12 +182,12 @@ def leer_proinversion(sesion, fuente):
     se queda con la primera página (las más recientes)."""
     base = fuente.get("url") or URL_PROINVERSION
     r = sesion.get(base, timeout=90)  # abre la página (cookies de sesión) y sirve de respaldo
-    html_paginas = []
+    html_paginas, vistas = [], set()
     por_pagina = int(fuente.get("por_pagina", 50))
-    for pagina in range(1, int(fuente.get("paginas", 2)) + 1):
+    for pagina in range(1, int(fuente.get("paginas", 20)) + 1):
         filtro = {"Page": pagina, "AnoInicial": 0, "AnoFinal": 0, "MontoInicial": 0, "MontoFinal": 99999999999,
                   "TipologiaList": "", "EstadoConvocatoriaList": [], "TipoConvocatoriaList": [],
-                  "PageNumberPaging": pagina, "PageSizePaging": str(por_pagina), "MaximumPageNumbersToDisplay": "3",
+                  "PageNumberPaging": pagina, "PageSizePaging": por_pagina, "MaximumPageNumbersToDisplay": "3",
                   "NombreProyecto": "", "DepartamentoCodigo": "00", "ProvinciaCodigo": "0000",
                   "DistritoCodigo": "000000", "NivelGobierno": "0", "TipoProyecto": "0",
                   "CodigoSNIPInvierte": "", "IdSector": "0", "IdTipologia": "0"}
@@ -196,12 +196,12 @@ def leer_proinversion(sesion, fuente):
                              headers={"Content-Type": "application/json; charset=utf-8", "Referer": base,
                                       "X-Requested-With": "XMLHttpRequest"})
             n = rp.text.count('class="portafolio-card"') if rp.status_code == 200 else 0
-            print(f"    página {pagina} (consulta interna) -> HTTP {rp.status_code}, {n} convocatorias")
-            if not n:
+            ids = set(re.findall(r"idConvocatoria=(\d+)", rp.text))
+            if not n or (ids and ids <= vistas):
+                print(f"    página {pagina}: sin convocatorias nuevas (HTTP {rp.status_code}); fin")
                 break
+            vistas |= ids
             html_paginas.append(rp.text)
-            if n < por_pagina:
-                break
         except Exception as e:  # noqa: BLE001
             print(f"    consulta interna falló: {str(e)[:150]}")
             break
@@ -209,7 +209,7 @@ def leer_proinversion(sesion, fuente):
     if not html_paginas and r.status_code == 200:
         html_paginas = [r.text]
     tarjetas = [t for h in html_paginas for t in h.split('class="portafolio-card"')[1:]]
-    print(f"    {base} -> {len(tarjetas)} convocatorias en total")
+    print(f"    {base} -> {len(html_paginas)} páginas, {len(tarjetas)} convocatorias en total")
     items = []
     for t in tarjetas:
         m = re.search(r'<a href="([^"]*FichaProyectoConvocatoria[^"]*)"[^>]*>(.*?)</a>', t, re.S)
