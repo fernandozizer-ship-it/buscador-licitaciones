@@ -907,6 +907,18 @@ def revisar(config, almacen, estado, sesion, normalizar, departamento_de, ahora)
         time.sleep(0.4)
     if pendientes:
         print(f"  Avisos completados con detalle: {min(len(pendientes), tope)} de {len(pendientes)} pendientes")
+    # Obras financiadas por empresas privadas (Camisea, mineras, industria): qué empresa y cómo participar
+    empresas = [(e, re.compile(e["patron"])) for e in config.get("empresas_privadas", [])]
+    for a in almacen.values():
+        if a.get("origen") == "linkedin":
+            continue
+        texto_a = normalizar(f"{a.get('titulo', '')} {a.get('resumen', '')} {a.get('obra') or ''} {a.get('empresa') or ''}")
+        hallada = next((e for e, rx in empresas if rx.search(texto_a)), None)
+        if hallada and (a.get("sector") == "Privado" or "privad" in (a.get("grupo") or "").lower()):
+            a["empresa_privada"] = hallada["nombre"]
+            a["como_postular"] = hallada["como_postular"]
+        if "privad" in (a.get("grupo") or "").lower() and a.get("clase") in ("Nota de prensa", "Nota sobre una convocatoria"):
+            a["clase"] = "Anuncio de obra privada"
     # Sin nombre de obra: completar con el de otro aviso del mismo CUI, y siempre dejar la ficha del MEF
     obra_por_cui = {a["cui"]: a["obra"] for a in almacen.values() if a.get("cui") and a.get("obra")}
     for a in almacen.values():
@@ -943,7 +955,7 @@ def _f(valor):
 
 
 COLORES_CLASE = {"Búsqueda de subcontratistas / proveedores": "#7c3aed", "Convocatoria / proceso de selección": "#15803d", "Documento de un proceso en curso": "#1d4ed8",
-                 "Acercamiento al mercado": "#b45309", "Resultado / buena pro": "#b91c1c",
+                 "Acercamiento al mercado": "#b45309", "Anuncio de obra privada": "#0e7490", "Resultado / buena pro": "#b91c1c",
                  "Nota sobre una convocatoria": "#0f766e", "Nota de prensa": "#6b7280"}
 ORDEN_CLASE = list(COLORES_CLASE)
 
@@ -982,6 +994,7 @@ def html_correo(avisos):
   <div style="color:#374151">{e(" · ".join(datos))}</div>
   {f'<div style="font-size:13px"><a href="{e(a["url"])}" style="color:#0a66c2">🔗 Ver publicación en LinkedIn</a> · 👤 {e(a.get("publicado_por") or "")}{" · ✉️ " + e(a["contacto"]) if a.get("contacto") else ""}{" · 🔧 " + e(a["partidas"]) if a.get("partidas") else ""}</div>' if a.get("origen") == "linkedin" else ""}
   {f'<div style="font-size:13px;color:#b45309"><b>⏰ Presentación de propuestas: {e(a["fecha_limite"][8:10] + "/" + a["fecha_limite"][5:7] + "/" + a["fecha_limite"][:4])}</b></div>' if a.get("fecha_limite") else ""}
+  {f'<div style="font-size:12px;color:#0e7490">🏢 {e(a["empresa_privada"])} · 🧭 {e(a["como_postular"])}</div>' if a.get("como_postular") else ""}
   <div style="font-size:12px;color:#6b7280">📅 {e(fecha_legible(a))}{f' · <a href="{e(a["ficha_cui"])}" style="color:#1d4ed8">consultar CUI {e(a["cui"])} en el MEF</a>' if a.get("ficha_cui") else ""}</div>
 </td></tr>""")
     return ('<h3 style="color:#7c3aed">📣 Avisos: OxI, ANIN, PEIP, Petroperú, mineras y subcontratos</h3>'

@@ -237,7 +237,7 @@ $("limpiar").addEventListener("click", () => {
 // ---------- Avisos (Fase 2) ----------
 let AVISOS = [];
 const COLOR_CLASE = {"Búsqueda de subcontratistas / proveedores": "#7c3aed", "Convocatoria / proceso de selección": "#15803d", "Documento de un proceso en curso": "#1d4ed8",
-  "Acercamiento al mercado": "#b45309", "Resultado / buena pro": "#b91c1c", "Nota sobre una convocatoria": "#0f766e", "Nota de prensa": "#6b7280"};
+  "Acercamiento al mercado": "#b45309", "Anuncio de obra privada": "#0e7490", "Resultado / buena pro": "#b91c1c", "Nota sobre una convocatoria": "#0f766e", "Nota de prensa": "#6b7280"};
 function fechaAviso(a) {
   if (a.origen === "linkedin") return a.fecha_aproximada && a.hace_linkedin
     ? "Publicado en LinkedIn hace " + a.hace_linkedin + " (≈ " + fecha(a.fecha).slice(0, 10) + ", visto el " + fecha(a.visto).slice(0, 10) + ")"
@@ -266,6 +266,7 @@ function filtrarAvisos() {
     ${!a.obra && a.resumen ? `<div class="resumen">${esc(a.resumen)}</div>` : ""}
     ${a.origen === "linkedin" ? `<div class="meta"><span class="tag" style="background:#0a66c2;color:#fff">in LinkedIn</span>${a.url && !/\/in\/|\/company\//.test(a.url) ? `<span><a href="${esc(a.url)}" target="_blank" rel="noopener">🔗 Ver publicación</a></span>` : ""}${a.publicado_por ? `<span>👤 ${a.url_autor ? `<a href="${esc(a.url_autor)}" target="_blank" rel="noopener">${esc(a.publicado_por)}</a>` : esc(a.publicado_por)}</span>` : ""}${a.partidas ? `<span>🔧 ${esc(a.partidas)}</span>` : ""}${a.contacto ? `<span>✉️ ${esc(a.contacto)}</span>` : ""}</div>` : ""}
     ${a.fecha_limite ? `<div class="meta"><span style="color:${new Date(a.fecha_limite) < new Date() ? "#991b1b" : "#b45309"}"><b>⏰ Presentación de propuestas: ${esc(dia(a.fecha_limite))}${new Date(a.fecha_limite) < new Date() ? " (vencida)" : ""}</b></span></div>` : ""}
+    ${a.como_postular ? `<div class="meta"><span style="color:#0e7490">🏢 <b>${esc(a.empresa_privada)}</b> · 🧭 ${esc(a.como_postular)}</span></div>` : ""}
     <div class="meta"><span>📅 ${esc(fechaAviso(a))}</span><span>🏷️ ${esc(a.sector || "Público")}</span><span>🔎 Procedencia: ${esc(a.procedencia || a.medio || a.fuente)}</span>${a.cui ? `<span><a href="https://ofi5.mef.gob.pe/ssi/" target="_blank" rel="noopener" title="Pega el CUI ${esc(a.cui)} en el buscador del MEF">📄 Consultar CUI ${esc(a.cui)} en el MEF</a></span>` : ""}</div>
   </article>`;}).join("") : `<div class="vacio">No hay avisos con estos filtros.</div>`;
 }
@@ -276,7 +277,7 @@ document.querySelectorAll(".pestana").forEach(b => b.addEventListener("click", (
   $("vistaAvisos").hidden = b.dataset.vista !== "avisos";
 }));
 fetch("avisos.json?v=" + Date.now()).then(r => r.ok ? r.json() : {avisos: []}).then(data => {
-  AVISOS = (data.avisos || []).map(a => ({...a, _txt: norm([a.titulo, a.obra, a.entidad, a.empresa, a.sector, a.procedencia, a.tipo, a.cui, a.resumen, a.grupo, a.publicado_por, a.partidas, a.contacto, a.lugar, a.origen === "linkedin" ? "linkedin" : "", a.departamento, a.medio, a.fuente, (a.especialidades || []).join(" ")].join(" "))}));
+  AVISOS = (data.avisos || []).map(a => ({...a, _txt: norm([a.titulo, a.obra, a.entidad, a.empresa, a.sector, a.procedencia, a.tipo, a.cui, a.resumen, a.grupo, a.publicado_por, a.partidas, a.contacto, a.lugar, a.origen === "linkedin" ? "linkedin" : "", a.empresa_privada, a.departamento, a.medio, a.fuente, (a.especialidades || []).join(" ")].join(" "))}));
   [...new Set(AVISOS.map(a => a.clase).filter(Boolean))].forEach(c => { const o = document.createElement("option"); o.value = c; o.textContent = c; $("aclase").appendChild(o); });
   const GRUPOS_FIJOS = ["Obras por Impuestos", "ANIN", "PEIP y programas especiales", "Proyectos especiales regionales",
     "Gobiernos regionales y municipios", "Mineras", "Petroperú", "Subcontratos de constructoras", "Licitaciones privadas"];
