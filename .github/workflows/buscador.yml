@@ -14,6 +14,7 @@ on:
     paths:
       - "buscador/**"
       - "docs/index.html"
+      - ".github/workflows/buscador.yml"
   workflow_dispatch:
     inputs:
       diagnostico:
@@ -60,6 +61,10 @@ jobs:
         run: |
           git config user.name "buscador-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          rem Limpia un rebase que haya quedado a medias en una ejecucion anterior
+          git rebase --abort 1>nul 2>nul
+          if exist ".git\rebase-merge" rmdir /s /q ".git\rebase-merge"
+          if exist ".git\rebase-apply" rmdir /s /q ".git\rebase-apply"
           git add docs estado.json
           if exist muestra_api.json git add muestra_api.json
-          git diff --cached --quiet && (echo Sin cambios que guardar) || (git commit -m "Actualizacion de licitaciones" && git pull --rebase --autostash origin main && git push)
+          git diff --cached --quiet && (echo Sin cambios que guardar) || (git commit -m "Actualizacion de licitaciones" && (git pull --rebase --autostash -X theirs origin main || (git rebase --abort & git pull --no-rebase --no-edit -X ours origin main)) && git push)
