@@ -930,8 +930,11 @@ def revisar(config, almacen, estado, sesion, normalizar, departamento_de, ahora)
         if hallada and (a.get("sector") == "Privado" or "privad" in (a.get("grupo") or "").lower()):
             a["empresa_privada"] = hallada["nombre"]
             a["como_postular"] = hallada["como_postular"]
-        if "privad" in (a.get("grupo") or "").lower() and a.get("clase") in ("Nota de prensa", "Nota sobre una convocatoria"):
-            a["clase"] = "Anuncio de obra privada"
+        if "privad" in (a.get("grupo") or "").lower():
+            if not hallada and not re.search(r"empresa|consorcio|minera|aporte|financiad|financiara|privad|donac", texto_a):
+                a["sector"] = "Público"  # anuncio de obra pública (municipio, región): se licitará en el SEACE
+            elif a.get("clase") in ("Nota de prensa", "Nota sobre una convocatoria"):
+                a["clase"] = "Anuncio de obra privada"
     # Sin nombre de obra: completar con el de otro aviso del mismo CUI, y siempre dejar la ficha del MEF
     obra_por_cui = {a["cui"]: a["obra"] for a in almacen.values() if a.get("cui") and a.get("obra")}
     for a in almacen.values():
