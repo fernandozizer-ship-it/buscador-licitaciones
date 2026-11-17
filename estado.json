@@ -1,14 +1,16 @@
 {
   "fallas_seguidas": 0,
   "ultimo_error": "2026-11-15T19:47-05:00 La API del OECE no respondió (HTTPSConnectionPool(host='contratacionesabiertas.osce.gob.pe', port=443): Max retries exceeded with url: /api/v1/releasesAfter?format=json&order=desc (Caused by NameResolutionError(\"HTTPSConnection(host='contratacionesabiertas.osce.gob.pe', port=443)) en https://contratacionesabiertas.oece.gob.pe/api/v1/releasesAfter?format=json&order=desc",
-  "ultima_ejecucion_ok": "2026-11-16T19:08-05:00",
+  "ultima_ejecucion_ok": "2026-11-16T19:24-05:00",
   "ultimo_resumen": "0 nuevos, 0 prioritarias",
   "fuentes_avisos_vistas": [
     "ANIN - gob.pe",
     "ANIN - noticias",
+    "Camisea / Pluspetrol - obras en Pisco y Cusco",
     "Constructoras - registro de proveedores",
     "Empresas que financian obras en Ica",
     "Energiminas (prensa minera)",
+    "Fondos sociales y aportes privados - obras",
     "GORE Ica, Arequipa, Moquegua, Lima (gob.pe)",
     "Gobiernos regionales del sur - noticias",
     "Ica - mineras e industria (Marcona, Pisco, Chincha)",
@@ -37,7 +39,8 @@
     "Subcontratos - LinkedIn (1)",
     "Subcontratos - LinkedIn (2)",
     "Subcontratos - noticias",
-    "Subcontratos - web"
+    "Subcontratos - web",
+    "Sur - mineras (Arequipa, Moquegua, Tacna)"
   ],
   "fuentes_reiniciadas": [
     "Constructoras - registro de proveedores",
@@ -152,6 +155,7 @@
     "aviso-369a5a962d1574f6",
     "aviso-36fd1996c0e48a14",
     "aviso-372a16e0d2c0e3e3",
+    "aviso-37a061cccd093f3b",
     "aviso-386d1efb8003b61f",
     "aviso-3990d325987843c5",
     "aviso-399776bcf044db89",
@@ -491,6 +495,7 @@
     "aviso-ea8ca6f20d014969",
     "aviso-eb671dcdc6c9d710",
     "aviso-ebeb2d2c5d206ece",
+    "aviso-ebf8da6009be0227",
     "aviso-ec7493bed1dd716b",
     "aviso-edb88a49f87ccb72",
     "aviso-ee4c77ee77db52d9",
