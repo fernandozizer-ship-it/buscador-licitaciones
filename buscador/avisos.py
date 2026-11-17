@@ -533,6 +533,7 @@ def tipo_contratacion(texto_n):
 
 
 VERSION_PDF = 2
+EMPRESAS_RX = []  # empresas privadas conocidas (config "empresas_privadas"), se cargan en revisar()
 URL_FICHA_CUI = "https://ofi5.mef.gob.pe/ssi/"  # Seguimiento de Inversiones del MEF: se busca por CUI
 
 
@@ -561,6 +562,7 @@ def enriquecer(sesion, aviso, normalizar, departamento_de, especialidades_rx, co
             texto += " " + texto_pdf
     texto_n = normalizar(texto)
     titulo_n = normalizar(titulo)
+    aviso["empresas_mencionadas"] = [n for n, rx in EMPRESAS_RX if rx.search(texto_n)]
     if detalle and contexto_rx and not aviso.get("sin_contexto_ok") and not coincide(normalizar(f"{titulo} {detalle[:8000]}"), contexto_rx):
         aviso["descartar"] = "no es de obra"
     if detalle and excluir_rx and coincide(normalizar(f"{titulo} {detalle[:2000]}"), excluir_rx):
@@ -909,6 +911,11 @@ def revisar(config, almacen, estado, sesion, normalizar, departamento_de, ahora)
     pendientes += [a for a in almacen.values() if not a.get("enriquecido") and a not in pendientes]
     pendientes += [a for a in almacen.values() if not a.get("obra") and a.get("pdf_revisado") != VERSION_PDF
                    and "gob.pe" in (a.get("url_original") or a.get("url") or "") and a not in pendientes]
+    # Obras de inversión privada: abrir la nota para saber qué empresa la financia (suele estar en el cuerpo)
+    pendientes += [a for a in almacen.values() if "privad" in (a.get("grupo") or "").lower()
+                   and "empresas_mencionadas" not in a and a.get("origen") != "linkedin" and a not in pendientes]
+    global EMPRESAS_RX
+    EMPRESAS_RX = [(e["nombre"], re.compile(e["patron"])) for e in config.get("empresas_privadas", [])]
     tope = int(config.get("max_avisos_a_completar_por_ejecucion", 80))
     for a in pendientes[:tope]:
         if a.get("fecha_real") is None:
@@ -926,7 +933,8 @@ def revisar(config, almacen, estado, sesion, normalizar, departamento_de, ahora)
         if a.get("origen") == "linkedin":
             continue
         texto_a = normalizar(f"{a.get('titulo', '')} {a.get('resumen', '')} {a.get('obra') or ''} {a.get('empresa') or ''}")
-        hallada = next((e for e, rx in empresas if rx.search(texto_a)), None)
+        hallada = next((e for e, rx in empresas if rx.search(texto_a)), None) or next(
+            (e for e, _ in empresas if e["nombre"] in (a.get("empresas_mencionadas") or [])), None)
         if hallada and (a.get("sector") == "Privado" or "privad" in (a.get("grupo") or "").lower()):
             a["empresa_privada"] = hallada["nombre"]
             a["como_postular"] = hallada["como_postular"]
