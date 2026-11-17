@@ -1,15 +1,17 @@
 {
   "fallas_seguidas": 0,
   "ultimo_error": "2026-11-15T19:47-05:00 La API del OECE no respondió (HTTPSConnectionPool(host='contratacionesabiertas.osce.gob.pe', port=443): Max retries exceeded with url: /api/v1/releasesAfter?format=json&order=desc (Caused by NameResolutionError(\"HTTPSConnection(host='contratacionesabiertas.osce.gob.pe', port=443)) en https://contratacionesabiertas.oece.gob.pe/api/v1/releasesAfter?format=json&order=desc",
-  "ultima_ejecucion_ok": "2026-11-16T16:51-05:00",
+  "ultima_ejecucion_ok": "2026-11-16T19:08-05:00",
   "ultimo_resumen": "0 nuevos, 0 prioritarias",
   "fuentes_avisos_vistas": [
     "ANIN - gob.pe",
     "ANIN - noticias",
     "Constructoras - registro de proveedores",
+    "Empresas que financian obras en Ica",
     "Energiminas (prensa minera)",
     "GORE Ica, Arequipa, Moquegua, Lima (gob.pe)",
     "Gobiernos regionales del sur - noticias",
+    "Ica - mineras e industria (Marcona, Pisco, Chincha)",
     "Irrigaciones y riego (PSI, Mi Riego)",
     "Licitaciones privadas (colegios, universidades, clínicas)",
     "Mineras - proveedores y licitaciones",
@@ -76,6 +78,7 @@
     "aviso-0c88478690e70713",
     "aviso-0cb977044bf0f6bc",
     "aviso-0ccbffdd04bd7ad4",
+    "aviso-0e6c0bb1052e36ea",
     "aviso-0f52a38c8f94ee7b",
     "aviso-1079efb98072cd46",
     "aviso-10ceed6b59258b9b",
@@ -146,6 +149,7 @@
     "aviso-3554e23469e24656",
     "aviso-359d205906c05f83",
     "aviso-36502f38996ed397",
+    "aviso-369a5a962d1574f6",
     "aviso-36fd1996c0e48a14",
     "aviso-372a16e0d2c0e3e3",
     "aviso-386d1efb8003b61f",
@@ -160,7 +164,6 @@
     "aviso-3b7da2114eb23059",
     "aviso-3bc97dd102eae533",
     "aviso-3c1e4e3a19834bc6",
-    "aviso-3c4699edce465728",
     "aviso-3cad1069e25bddb9",
     "aviso-3eeb4c90fce8fb4d",
     "aviso-3ff2d2d8aeafd419",
@@ -328,7 +331,6 @@
     "aviso-8e093fcce820b19e",
     "aviso-8e4fbd795d5db11e",
     "aviso-8ec5d713394f3c3e",
-    "aviso-8efef6aae3669a27",
     "aviso-9029a6b08176f9b7",
     "aviso-90783ba45d597789",
     "aviso-912da47d1350ea8d",
@@ -471,6 +473,7 @@
     "aviso-df91d05667b86bea",
     "aviso-dfac5cd7a44d82ee",
     "aviso-dfbe19e155f85f88",
+    "aviso-e03c6fe50fad4aea",
     "aviso-e041977b679bb10f",
     "aviso-e1841c4b1dba6c53",
     "aviso-e297c82928c39a80",
@@ -533,5 +536,5 @@
     "aviso-ff45e33dbebb1a29",
     "aviso-ffe8b3e0ea2468f9"
   ],
-  "version_filtros": 6
+  "version_filtros": 7
 }
