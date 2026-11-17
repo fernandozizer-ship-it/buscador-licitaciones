@@ -65,6 +65,8 @@ jobs:
           git rebase --abort 1>nul 2>nul
           if exist ".git\rebase-merge" rmdir /s /q ".git\rebase-merge"
           if exist ".git\rebase-apply" rmdir /s /q ".git\rebase-apply"
-          git add docs estado.json
+          if exist ".git\index.lock" del /f /q ".git\index.lock"
+          git add docs estado.json || exit /b 1
+          git status --short
           if exist muestra_api.json git add muestra_api.json
           git diff --cached --quiet && (echo Sin cambios que guardar) || (git commit -m "Actualizacion de licitaciones" && (git pull --rebase --autostash -X theirs origin main || (git rebase --abort & git pull --no-rebase --no-edit -X ours origin main)) && git push)
