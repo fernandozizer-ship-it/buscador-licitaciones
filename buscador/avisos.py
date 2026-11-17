@@ -137,6 +137,11 @@ def leer_rss(sesion, fuente):
     url = fuente.get("url") or ("https://news.google.com/rss/search?q=" + quote_plus(fuente["consulta"]) +
                                 "&hl=es-419&gl=PE&ceid=PE:es-419")
     r = sesion.get(url, timeout=60)
+    for espera in (30, 90):  # Google News responde 429 si recibe muchas consultas seguidas: reintentar
+        if r.status_code != 429:
+            break
+        time.sleep(espera)
+        r = sesion.get(url, timeout=60)
     r.raise_for_status()
     raiz = ET.fromstring(r.content)
     items = []
@@ -727,10 +732,15 @@ def revisar(config, almacen, estado, sesion, normalizar, departamento_de, ahora)
     def tiene_contexto(texto_n):
         return coincide(texto_n, contexto_rx) if contexto_rx else True
     # Limpieza de lo ya guardado con las reglas actuales (región y exclusiones)
+    excl_por_fuente = {f["nombre"]: compilar(f["palabras_excluidas"], normalizar)
+                       for f in config.get("fuentes_avisos", []) if f.get("palabras_excluidas")}
     for k in list(almacen):
         a = almacen[k]
         if a.get("origen") == "linkedin":
             continue  # revisadas a mano en el barrido: no se filtran de nuevo
+        if a.get("fuente") in excl_por_fuente and coincide(normalizar(f"{a.get('titulo', '')} {a.get('resumen', '')}"), excl_por_fuente[a["fuente"]]):
+            del almacen[k]
+            continue
         if coincide(normalizar(f"{a.get('titulo', '')} {a.get('resumen', '')}"), excluir_rx):
             del almacen[k]
             continue
@@ -780,6 +790,8 @@ def revisar(config, almacen, estado, sesion, normalizar, departamento_de, ahora)
         depurar = nombre in config.get("depurar_fuentes", [])
         try:
             if fuente.get("tipo") == "rss":
+                if not fuente.get("url"):
+                    time.sleep(float(config.get("pausa_google_segundos", 4)))  # Google News limita consultas seguidas
                 items = leer_rss(sesion, fuente)
             elif fuente.get("tipo") == "web":
                 items = leer_web(sesion, fuente)
@@ -820,7 +832,8 @@ def revisar(config, almacen, estado, sesion, normalizar, departamento_de, ahora)
                     nuevos_para_correo.append(aviso)
                 continue
             texto_n = normalizar(f"{it['titulo']} {it.get('resumen', '')}")
-            if coincide(texto_n, excluir_rx):
+            excluir_fuente = fuente.get("palabras_excluidas")
+            if coincide(texto_n, excluir_rx) or (excluir_fuente and coincide(texto_n, compilar(excluir_fuente, normalizar))):
                 if nombre in config.get("depurar_fuentes", []):
                     print(f"      · FUERA  (palabra excluida en título) | {it['titulo'][:90]}")
                 continue

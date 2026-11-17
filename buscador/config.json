@@ -1162,7 +1162,26 @@
         "convoca"
       ],
       "revisar_detalle": true,
-      "requiere_contexto": true
+      "requiere_contexto": true,
+      "palabras_excluidas": [
+        "mexico",
+        "mexicana",
+        "cancun",
+        "veracruz",
+        "toluca",
+        "tren maya",
+        "nichupte",
+        "empresas ica",
+        "capacitara",
+        "capacitacion",
+        "formacion",
+        "curso",
+        "taller",
+        "deficiencias",
+        "contraloria",
+        "denuncia",
+        "alertan"
+      ]
     },
     {
       "nombre": "Ica - mineras e industria (Marcona, Pisco, Chincha)",
@@ -1203,7 +1222,26 @@
         "convoca"
       ],
       "revisar_detalle": true,
-      "requiere_contexto": true
+      "requiere_contexto": true,
+      "palabras_excluidas": [
+        "mexico",
+        "mexicana",
+        "cancun",
+        "veracruz",
+        "toluca",
+        "tren maya",
+        "nichupte",
+        "empresas ica",
+        "capacitara",
+        "capacitacion",
+        "formacion",
+        "curso",
+        "taller",
+        "deficiencias",
+        "contraloria",
+        "denuncia",
+        "alertan"
+      ]
     },
     {
       "nombre": "Sur - mineras (Arequipa, Moquegua, Tacna)",
@@ -1244,7 +1282,26 @@
         "convoca"
       ],
       "revisar_detalle": true,
-      "requiere_contexto": true
+      "requiere_contexto": true,
+      "palabras_excluidas": [
+        "mexico",
+        "mexicana",
+        "cancun",
+        "veracruz",
+        "toluca",
+        "tren maya",
+        "nichupte",
+        "empresas ica",
+        "capacitara",
+        "capacitacion",
+        "formacion",
+        "curso",
+        "taller",
+        "deficiencias",
+        "contraloria",
+        "denuncia",
+        "alertan"
+      ]
     },
     {
       "nombre": "Fondos sociales y aportes privados - obras",
@@ -1285,13 +1342,32 @@
         "convoca"
       ],
       "revisar_detalle": true,
-      "requiere_contexto": true
+      "requiere_contexto": true,
+      "palabras_excluidas": [
+        "mexico",
+        "mexicana",
+        "cancun",
+        "veracruz",
+        "toluca",
+        "tren maya",
+        "nichupte",
+        "empresas ica",
+        "capacitara",
+        "capacitacion",
+        "formacion",
+        "curso",
+        "taller",
+        "deficiencias",
+        "contraloria",
+        "denuncia",
+        "alertan"
+      ]
     },
     {
       "nombre": "Empresas que financian obras en Ica",
       "grupo": "Inversión privada (Camisea, mineras, industria)",
       "tipo": "rss",
-      "consulta": "(empresa OR consorcio OR minera) (financiará OR construirá OR \"donará\" OR \"entregará\") (obra OR local OR colegio OR posta OR puente OR losa OR centro) (Pisco OR Ica OR Chincha OR Nasca OR Palpa OR Marcona OR Paracas OR \"San Andrés\") when:180d",
+      "consulta": "(empresa OR consorcio OR minera) (financiará OR construirá OR \"donará\" OR \"entregará\") (obra OR local OR colegio OR posta OR puente OR losa OR centro) (Pisco OR Ica OR Chincha OR Nasca OR Palpa OR Marcona OR Paracas OR \"San Andrés\") Perú -México -Cancún -Veracruz -Toluca when:180d",
       "sector": "Privado",
       "palabras_clave": [
         "construira",
@@ -1326,7 +1402,26 @@
         "convoca"
       ],
       "revisar_detalle": true,
-      "requiere_contexto": true
+      "requiere_contexto": true,
+      "palabras_excluidas": [
+        "mexico",
+        "mexicana",
+        "cancun",
+        "veracruz",
+        "toluca",
+        "tren maya",
+        "nichupte",
+        "empresas ica",
+        "capacitara",
+        "capacitacion",
+        "formacion",
+        "curso",
+        "taller",
+        "deficiencias",
+        "contraloria",
+        "denuncia",
+        "alertan"
+      ]
     }
   ],
   "max_avisos_a_completar_por_ejecucion": 150,
@@ -1527,5 +1622,6 @@
       "patron": "quellaveco|anglo american",
       "como_postular": "Contratación privada: regístrate como proveedor de Anglo American Quellaveco; obras sociales suelen ir por OxI o fondos con municipios."
     }
-  ]
+  ],
+  "pausa_google_segundos": 4
 }
