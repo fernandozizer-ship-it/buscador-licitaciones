@@ -52,6 +52,7 @@ def main():
     L.RUTA_MUESTRA = os.path.join(tmp, "muestra.json")
     enviados = []
     L.descargar = lambda *a, **k: CASOS
+    L.releases_recientes = lambda *a, **k: []
     L.enviar_correo = lambda asunto, cuerpo: enviados.append((asunto, cuerpo)) or True
     L.main()
 

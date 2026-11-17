@@ -39,6 +39,12 @@ RUTA_ESTADO = os.path.join(RAIZ, "estado.json")
 RUTA_MUESTRA = os.path.join(RAIZ, "muestra_api.json")
 
 API_ARCHIVOS = "https://contratacionesabiertas.oece.gob.pe/api/v1/files?page={pagina}&paginateBy=50&format=json"
+# Buscador del portal (se actualiza a diario; los archivos mensuales pueden quedar días sin regenerarse)
+API_BUSQUEDA = ("https://contratacionesabiertas.oece.gob.pe/api/v1/search?format=json&paginateBy=100&page={pagina}"
+                "&category={categoria}&source=seace_v3&year={anio}&month={mes:02d}")
+API_RECORD = "https://contratacionesabiertas.oece.gob.pe/api/v1/record/{ocid}?format=json"
+RE_SERVICIO_DE_OBRA = re.compile(r"supervision|consultoria de obra|expediente tecnico|estudio definitivo|"
+                                 r"elaboracion del expediente|inspeccion de obra|\bobra\b|\bobras\b")
 URL_PROCESO = "https://contratacionesabiertas.oece.gob.pe/proceso/{ocid}"
 LIMA_TZ = dt.timezone(dt.timedelta(hours=-5))
 ESTADOS_CERRADOS = {"complete", "cancelled", "unsuccessful", "withdrawn"}
@@ -714,6 +720,61 @@ def releases_de_archivo(ruta):
             yield from de_flujo(ruta.lower().replace(".gz", ""), fh)
 
 
+def releases_recientes(registros, config, hoy):
+    """Procesos nuevos o actualizados en los últimos días, desde el buscador del portal del OECE.
+
+    Los archivos mensuales del OECE a veces quedan varios días sin regenerarse; el buscador del portal
+    se actualiza a diario. Se consultan obras y servicios (solo los de supervisión / consultoría de obra)
+    y se pide el detalle completo (record) solo de lo nuevo o cambiado."""
+    dias = int(config.get("dias_busqueda_reciente", 20))
+    meses = sorted({(f.year, f.month) for f in (hoy, hoy - dt.timedelta(days=dias))})
+    sesion = nueva_sesion()
+    resumenes = []
+    for anio, mes in meses:
+        for categoria in ("works", "services"):
+            pagina, paginas = 1, 1
+            while pagina <= paginas and pagina <= 40:
+                try:
+                    r = sesion.get(API_BUSQUEDA.format(pagina=pagina, categoria=categoria, anio=anio, mes=mes), timeout=90)
+                    r.raise_for_status()
+                    datos = r.json()
+                except Exception as e:  # noqa: BLE001
+                    print(f"Búsqueda reciente {anio}-{mes:02d} {categoria} pág. {pagina}: no se pudo leer ({str(e)[:100]})")
+                    break
+                paginas = int((datos.get("pagination") or {}).get("num_pages") or 1)
+                for x in datos.get("results") or []:
+                    cr = x.get("compiledRelease") or {}
+                    t = cr.get("tender") or {}
+                    if categoria == "services" and not RE_SERVICIO_DE_OBRA.search(normalizar(t.get("description"))):
+                        continue
+                    resumenes.append(cr)
+                pagina += 1
+                time.sleep(0.2)
+    pendientes = []
+    for cr in resumenes:
+        ocid = cr.get("ocid")
+        previo = registros.get(ocid)
+        if ocid and (not previo or (iso(parse_fecha(cr.get("date"))) or "") > (previo.get("actualizado") or "")):
+            pendientes.append(ocid)
+    pendientes = list(dict.fromkeys(pendientes))
+    tope = int(config.get("max_records_por_ejecucion", 700))
+    releases = []
+    for ocid in pendientes[:tope]:
+        try:
+            r = sesion.get(API_RECORD.format(ocid=ocid), timeout=60)
+            r.raise_for_status()
+            rec = (r.json().get("records") or [{}])[0]
+            if rec.get("compiledRelease"):
+                releases.append(rec["compiledRelease"])
+        except Exception as e:  # noqa: BLE001
+            print(f"  record {ocid}: no se pudo leer ({str(e)[:80]})")
+        time.sleep(0.15)
+    print(f"Búsqueda reciente del OECE (meses {', '.join(f'{a}-{m:02d}' for a, m in meses)}): "
+          f"{len(resumenes)} procesos de obra/servicio de obra, {len(pendientes)} nuevos o actualizados, "
+          f"{len(releases)} leídos con detalle")
+    return releases
+
+
 def descargar(desde, diagnostico=False):
     """Descarga los archivos mensuales necesarios y devuelve los releases publicados desde 'desde'."""
     import tempfile
@@ -961,6 +1022,16 @@ def main():
 
     try:
         releases = descargar(desde, diagnostico)
+    except RuntimeError as e:
+        releases = []
+        print("Archivos mensuales del OECE no disponibles:", e)
+    try:
+        releases += releases_recientes(registros, config, inicio)
+    except Exception as e:  # noqa: BLE001
+        print("Búsqueda reciente del OECE no disponible:", e)
+    try:
+        if not releases:
+            raise RuntimeError("no se pudo leer ni los archivos mensuales ni el buscador del OECE")
     except RuntimeError as e:
         estado["fallas_seguidas"] = int(estado.get("fallas_seguidas", 0)) + 1
         estado["ultimo_error"] = f"{iso(inicio)} {e}"

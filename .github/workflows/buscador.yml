@@ -7,8 +7,9 @@ name: Buscador de licitaciones
 
 on:
   schedule:
-    - cron: "7 12 * * *"    # 7:07 a. m. hora Peru
-    - cron: "7 23 * * *"    # 6:07 p. m. hora Peru
+    # Cada 3 horas (6:43, 9:43, 12:43, 15:43, 18:43 y 21:43 hora Peru). GitHub a veces atrasa u omite
+    # ejecuciones programadas; con varias al dia, si una se pierde la siguiente la cubre.
+    - cron: "43 2,11,14,17,20,23 * * *"
   push:                     # al guardar un barrido de LinkedIn o un cambio del buscador, corre al toque
     branches: [main]
     paths:
