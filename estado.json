@@ -1,8 +1,8 @@
 {
   "fallas_seguidas": 0,
   "ultimo_error": "2026-11-15T19:47-05:00 La API del OECE no respondió (HTTPSConnectionPool(host='contratacionesabiertas.osce.gob.pe', port=443): Max retries exceeded with url: /api/v1/releasesAfter?format=json&order=desc (Caused by NameResolutionError(\"HTTPSConnection(host='contratacionesabiertas.osce.gob.pe', port=443)) en https://contratacionesabiertas.oece.gob.pe/api/v1/releasesAfter?format=json&order=desc",
-  "ultima_ejecucion_ok": "2026-11-19T13:36-05:00",
-  "ultimo_resumen": "15 nuevos, 0 prioritarias",
+  "ultima_ejecucion_ok": "2026-11-19T14:38-05:00",
+  "ultimo_resumen": "61 nuevos, 1 prioritarias",
   "fuentes_avisos_vistas": [
     "ANIN - gob.pe",
     "ANIN - noticias",
@@ -359,6 +359,7 @@
     "aviso-8ae74f97b1d48216",
     "aviso-8b3497a603bb6e3a",
     "aviso-8bf6315db8821404",
+    "aviso-8d2d48e9308dc32c",
     "aviso-8d379d67bd7bc370",
     "aviso-8d805e78f74671f2",
     "aviso-8e093fcce820b19e",
